@@ -20,6 +20,11 @@ echo Set WshShell = Nothing >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 :: Run the VBScript now
 wscript.exe "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 
+:: Clean up any old visible registry keys so they don't pop up on boot
+reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "AW-Server" /f >nul 2>&1
+reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "AW-Watcher-AFK" /f >nul 2>&1
+reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "AW-Watcher-Window" /f >nul 2>&1
+
 :: Set auto-start on boot to run the invisible VBScript
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ActivityWatchHidden" /t REG_EXPAND_SZ /d "wscript.exe \"%USERPROFILE%\.aw_tracker\start_aw.vbs\"" /f
 
