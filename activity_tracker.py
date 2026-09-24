@@ -5,15 +5,46 @@ from datetime import datetime, timedelta, timezone
 import platform
 import os
 import subprocess
+import sys
+import random
+import time
 
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2iVlsejlezUdyzPnbeDB4gikOpFSCKluANf4KYsrVEr1F7vNNHZgdZzg_DlnLv4hlfg/exec"
+
+def auto_update():
+    try:
+        # Fetch the master version of this script from GitHub
+        url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/master/activity_tracker.py"
+        res = requests.get(url, timeout=10)
+        if res.status_code == 200:
+            new_code = res.text
+            
+            with open(__file__, 'r') as f:
+                current_code = f.read()
+                
+            # If the GitHub code is different, update the local file and restart
+            if new_code.strip() != current_code.strip():
+                print("New version found! Updating and restarting...")
+                with open(__file__, 'w') as f:
+                    f.write(new_code)
+                
+                kwargs = {}
+                if os.name == 'nt':
+                    kwargs['creationflags'] = 0x08000000
+                subprocess.Popen([sys.executable] + sys.argv, **kwargs)
+                sys.exit(0)
+    except Exception as e:
+        pass # Ignore network errors and run normally
 
 # Automatically get the laptop serial number based on OS
 def get_serial_number():
     system = platform.system()
     try:
         if system == "Windows":
-            return subprocess.check_output("wmic bios get serialnumber", shell=True).decode().split('\n')[1].strip()
+            try:
+                return subprocess.check_output("wmic bios get serialnumber", shell=True, creationflags=0x08000000).decode().split('\n')[1].strip()
+            except Exception:
+                return subprocess.check_output('powershell -NoProfile -Command "(Get-WmiObject win32_bios).SerialNumber"', shell=True, creationflags=0x08000000).decode().strip()
         elif system == "Linux":
             if os.path.exists("/sys/class/dmi/id/product_serial"):
                 with open("/sys/class/dmi/id/product_serial", "r") as f:
@@ -38,7 +69,7 @@ AW_URL = "http://localhost:5600/api/0/buckets"
 def get_daily_events(target_date):
     # Calculate local midnight for the target_date
     local_tz = datetime.now().astimezone().tzinfo
-    start_local = target_date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=local_tz)
+    start_local = target_date.replace(hour=8, minute=0, second=0, microsecond=0, tzinfo=local_tz)
     end_local = start_local + timedelta(days=1)
     
     # If the target date is today, limit the end time to right now
@@ -110,16 +141,17 @@ def get_daily_events(target_date):
                         times_opened += 1
                         was_afk = False
                 elif status == 'afk':
-                    afk_time += duration
+                    # Cap AFK event at 60 minutes (3600s) to detect Shutdowns/Sleep
+                    if duration > 3600:
+                        afk_time += 3600
+                    else:
+                        afk_time += duration
                     was_afk = True
                     
-        # Off time is calculated only AFTER the laptop is first opened today
-        if first_active:
-            total_period_seconds = (end_local - first_active).total_seconds()
-            off_time = total_period_seconds - (active_time + afk_time)
-            if off_time < 0:
-                off_time = 0
-        else:
+        # Off time is strictly calculated from the 8:00 AM start time
+        total_period_seconds = (end_local - start_local).total_seconds()
+        off_time = total_period_seconds - (active_time + afk_time)
+        if off_time < 0:
             off_time = 0
                     
         # 2. Calculate top apps from window bucket
@@ -168,6 +200,9 @@ def get_daily_events(target_date):
         return None
 
 def main():
+    # Attempt to fetch and apply OTA updates before doing anything
+    auto_update()
+    
     print("Gathering data from ActivityWatch...")
     
     sync_file = os.path.join(os.path.dirname(__file__), 'last_sync.txt')
@@ -212,8 +247,13 @@ def main():
             "Top_Apps": aw_data["Top_Apps"]
         }
         
-        print("Sending to Google Sheets...")
+        print("Preparing to send to Google Sheets...")
         try:
+            # Jitter: wait a random time between 1 and 300 seconds (5 minutes) to prevent 20,000 laptops from hitting the server at the exact same second
+            delay = random.randint(1, 300)
+            print(f"Jitter: Waiting {delay} seconds before sending...")
+            time.sleep(delay)
+            
             # Google Apps Script often returns a 302 redirect or a 404 HTML page after successfully executing doPost.
             res = requests.post(APPS_SCRIPT_URL, json=payload, timeout=30, allow_redirects=False)
             if res.status_code in [200, 302, 303, 404]:
