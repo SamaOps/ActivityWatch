@@ -129,8 +129,8 @@ APPS_SCRIPT_URL = "https://activitywatch-j5d5.onrender.com/api/track"
 
 def auto_update():
     try:
-        # Fetch the master version of this script from GitHub
-        url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/activity_tracker.py"
+        # Fetch the master version of this script from GitHub, using a timestamp to bypass cache
+        url = f"https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/activity_tracker.py?t={time.time()}"
         res = requests.get(url, timeout=10)
         if res.status_code == 200:
             new_code = res.text
