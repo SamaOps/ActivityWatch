@@ -148,16 +148,20 @@ def get_daily_events(target_date):
                         afk_time += duration
                     was_afk = True
                     
-        # 2. Mathematical Safety Net: Prevent duplicate watcher glitches from creating impossible time
-        total_period_seconds = (end_local - start_local).total_seconds()
+        # 2. Dynamic Mathematical Envelope: Calculate strictly between First Active and Last Active
+        if first_active and last_active:
+            total_period_seconds = (last_active - first_active).total_seconds()
+        else:
+            total_period_seconds = (end_local - start_local).total_seconds()
         
+        # Prevent duplicate watcher glitches from creating impossible time
         if active_time > total_period_seconds:
             active_time = total_period_seconds
             
         if afk_time > (total_period_seconds - active_time):
             afk_time = total_period_seconds - active_time
             
-        # Off time is strictly calculated from the remaining time
+        # Off time is the "gaps" between First Active and Last Active
         off_time = total_period_seconds - (active_time + afk_time)
         if off_time < 0:
             off_time = 0
