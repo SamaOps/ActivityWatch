@@ -11,7 +11,7 @@ import time
 import uuid
 import re
 
-APPS_SCRIPT_URL = "https://activitywatch-j5d5.onrender.com/api/track"
+BACKEND_API_URL = "https://activitywatch-j5d5.onrender.com/api/track"
 
 def auto_update():
     try:
@@ -278,8 +278,7 @@ def main():
             print(f"Jitter: Waiting {delay} seconds before sending...")
             time.sleep(delay)
             
-            # Google Apps Script often returns a 302 redirect or a 404 HTML page after successfully executing doPost.
-            res = requests.post(APPS_SCRIPT_URL, json=payload, timeout=30, allow_redirects=False)
+            res = requests.post(BACKEND_API_URL, json=payload, timeout=30, allow_redirects=False)
             if res.status_code in [200, 302, 303, 404]:
                 print(f"✅ Successfully sent data for {current_date.strftime('%Y-%m-%d')}!")
                 # Save sync success for this date
