@@ -8,6 +8,8 @@ import subprocess
 import sys
 import random
 import time
+import uuid
+import re
 
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2iVlsejlezUdyzPnbeDB4gikOpFSCKluANf4KYsrVEr1F7vNNHZgdZzg_DlnLv4hlfg/exec"
 
@@ -35,6 +37,15 @@ def auto_update():
                 sys.exit(0)
     except Exception as e:
         pass # Ignore network errors and run normally
+
+# Automatically get the laptop MAC address
+def get_mac_address():
+    try:
+        mac_num = uuid.getnode()
+        mac = ':'.join(re.findall('..', '%012x' % mac_num)).upper()
+        return mac
+    except Exception:
+        return "Unknown-MAC"
 
 # Automatically get the laptop serial number based on OS
 def get_serial_number():
@@ -247,6 +258,7 @@ def main():
         payload = {
             "Date": aw_data["Date"],
             "Serial_No": get_serial_number(),
+            "MAC_Address": get_mac_address(),
             "OS": "macOS" if platform.system() == "Darwin" else platform.system(),
             "Day_of_Week": aw_data["Day_of_Week"],
             "Total_Active_Time": aw_data["Total_Active_Time"],
