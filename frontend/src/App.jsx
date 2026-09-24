@@ -308,10 +308,10 @@ function App() {
                   <td style={{ color: '#fb923c', whiteSpace: 'nowrap' }}>{row.afk_time}</td>
                   <td style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>{row.off_time}</td>
                   <td style={{ textAlign: 'center' }}>{row.times_opened}</td>
-                  <td style={{ verticalAlign: 'top' }}>
+                  <td style={{ verticalAlign: 'top', minWidth: '250px' }}>
                     <ExpandableList text={row.top_apps} />
                   </td>
-                  <td style={{ verticalAlign: 'top' }}>
+                  <td style={{ verticalAlign: 'top', minWidth: '250px' }}>
                     <ExpandableList text={row.top_websites} />
                   </td>
                 </tr>
