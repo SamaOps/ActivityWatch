@@ -26,9 +26,9 @@ EOF
     mkdir -p ~/.aw_tracker
     cat > ~/.aw_tracker/start_aw.sh <<EOF
 #!/bin/bash
-nohup /Applications/ActivityWatch.app/Contents/MacOS/aw-server > /dev/null 2>&1 &
-nohup /Applications/ActivityWatch.app/Contents/MacOS/aw-watcher-afk > /dev/null 2>&1 &
-nohup /Applications/ActivityWatch.app/Contents/MacOS/aw-watcher-window > /dev/null 2>&1 &
+nohup /Applications/activitywatch/aw-server/aw-server > /dev/null 2>&1 &
+nohup /Applications/activitywatch/aw-watcher-afk/aw-watcher-afk > /dev/null 2>&1 &
+nohup /Applications/activitywatch/aw-watcher-window/aw-watcher-window > /dev/null 2>&1 &
 EOF
     chmod +x ~/.aw_tracker/start_aw.sh
     
