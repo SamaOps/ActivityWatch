@@ -271,7 +271,7 @@ def main():
             "Top_Apps": aw_data["Top_Apps"]
         }
         
-        print("Preparing to send to Google Sheets...")
+        print("Preparing to send to Render Database...")
         try:
             # Jitter: wait a random time between 1 and 300 seconds (5 minutes) to prevent 20,000 laptops from hitting the server at the exact same second
             delay = random.randint(1, 300)
