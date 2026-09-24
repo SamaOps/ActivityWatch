@@ -11,32 +11,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://activitywatch-j5d5.onre
 
 const COLORS = ['#38bdf8', '#fb923c', '#10b981', '#8b5cf6', '#ef4444'];
 
-const ExpandableList = ({ text }) => {
-  const [expanded, setExpanded] = useState(false);
-  if (!text || text === 'None') return <span style={{ color: 'var(--text-muted)' }}>None</span>;
-  
-  const items = text.split(', ');
-  if (items.length <= 1) {
-    return <div className="truncate-single" title={text}>{text}</div>;
-  }
-
-  return (
-    <div className="expandable-cell">
-      <div className="primary-item">
-        <span className="truncate-single" title={items[0]}>{items[0]}</span>
-        <button className="badge expand-btn" onClick={() => setExpanded(!expanded)}>
-          {expanded ? 'Hide' : `+${items.length - 1} more`}
-        </button>
-      </div>
-      {expanded && (
-        <ul className="expanded-list">
-          {items.slice(1).map((item, i) => (
-            <li key={i} className="truncate-single list-item" title={item}>{item}</li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+// Clean array parser
+const parseList = (text) => {
+  if (!text || text === 'None') return [];
+  return text.split(', ');
 };
 
 function App() {
@@ -291,31 +269,52 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {filteredData.map((row, index) => (
-                <tr key={index}>
-                  <td style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{row.date}</td>
-                  <td>{row.day_of_week}</td>
-                  <td>
-                    <div style={{ fontWeight: '600' }}>{row.serial_no}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{row.mac_address}</div>
-                  </td>
-                  <td>
-                    <span className={`badge os-${row.os}`}>{row.os}</span>
-                  </td>
-                  <td style={{ whiteSpace: 'nowrap' }}>{row.first_active}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>{row.last_active}</td>
-                  <td style={{ color: 'var(--success)', fontWeight: 600, whiteSpace: 'nowrap' }}>{row.total_active_time}</td>
-                  <td style={{ color: '#fb923c', whiteSpace: 'nowrap' }}>{row.afk_time}</td>
-                  <td style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>{row.off_time}</td>
-                  <td style={{ textAlign: 'center' }}>{row.times_opened}</td>
-                  <td style={{ verticalAlign: 'top', minWidth: '250px' }}>
-                    <ExpandableList text={row.top_apps} />
-                  </td>
-                  <td style={{ verticalAlign: 'top', minWidth: '250px' }}>
-                    <ExpandableList text={row.top_websites} />
-                  </td>
-                </tr>
-              ))}
+              {filteredData.map((row, index) => {
+                const apps = parseList(row.top_apps);
+                const websites = parseList(row.top_websites);
+                
+                return (
+                  <tr key={index}>
+                    <td style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{row.date}</td>
+                    <td>{row.day_of_week}</td>
+                    <td>
+                      <div style={{ fontWeight: '600' }}>{row.serial_no}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{row.mac_address}</div>
+                    </td>
+                    <td>
+                      <span className={`badge os-${row.os}`}>{row.os}</span>
+                    </td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{row.first_active}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{row.last_active}</td>
+                    <td style={{ color: 'var(--success)', fontWeight: 600, whiteSpace: 'nowrap' }}>{row.total_active_time}</td>
+                    <td style={{ color: '#fb923c', whiteSpace: 'nowrap' }}>{row.afk_time}</td>
+                    <td style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>{row.off_time}</td>
+                    <td style={{ textAlign: 'center' }}>{row.times_opened}</td>
+                    <td style={{ verticalAlign: 'top', minWidth: '220px' }}>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
+                        {apps.length > 0 ? apps.map((app, i) => (
+                          <li key={i} style={{ padding: '6px 0', borderBottom: i !== apps.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>{app}</li>
+                        )) : <li style={{ color: '#64748b' }}>None</li>}
+                      </ul>
+                    </td>
+                    <td style={{ verticalAlign: 'top', minWidth: '300px' }}>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
+                        {websites.length > 0 ? websites.map((site, i) => (
+                          <li key={i} style={{ padding: '6px 0', borderBottom: i !== websites.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', wordBreak: 'break-all' }}>
+                            {site.startsWith('http') ? (
+                              <a href={site.split(' ')[0]} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'none' }}>
+                                {site}
+                              </a>
+                            ) : (
+                              site
+                            )}
+                          </li>
+                        )) : <li style={{ color: '#64748b' }}>None</li>}
+                      </ul>
+                    </td>
+                  </tr>
+                );
+              })}
               {filteredData.length === 0 && (
                 <tr>
                   <td colSpan="12" style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
