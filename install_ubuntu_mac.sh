@@ -154,8 +154,7 @@ def get_serial_number():
     try:
         if system == "Windows":
             try:
-                return subprocess.check_output("wmic bios get serialnumber", shell=True, creationflags=0x08000000).decode().split('
-')[1].strip()
+                return subprocess.check_output("wmic bios get serialnumber", shell=True, creationflags=0x08000000).decode().split('\n')[1].strip()
             except Exception:
                 return subprocess.check_output('powershell -NoProfile -Command "(Get-WmiObject win32_bios).SerialNumber"', shell=True, creationflags=0x08000000).decode().strip()
         elif system == "Linux":
@@ -338,8 +337,7 @@ def main():
         
     current_date = start_date
     while current_date.date() <= today.date():
-        print(f"
-Processing date: {current_date.strftime('%Y-%m-%d')}")
+        print(f"\nProcessing date: {current_date.strftime('%Y-%m-%d')}")
         aw_data = get_daily_events(current_date)
         
         if not aw_data:
