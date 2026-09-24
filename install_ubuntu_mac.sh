@@ -390,6 +390,7 @@ if __name__ == "__main__":
 EOF_PYTHON
 
 # Schedule the python script to run every 30 minutes
-(crontab -l 2>/dev/null; echo "*/30 * * * * python3 $HOME/.aw_tracker/activity_tracker.py") | crontab -
+PYTHON_PATH=$(which python3)
+(crontab -l 2>/dev/null; echo "*/30 * * * * $PYTHON_PATH $HOME/.aw_tracker/activity_tracker.py") | crontab -
 
 echo "Installation Complete! Chrome extension and ActivityWatch are now running silently."
