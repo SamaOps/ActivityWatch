@@ -62,7 +62,8 @@ def get_serial_number():
                     return f.read().strip()
             return subprocess.check_output("sudo dmidecode -s system-serial-number", shell=True).decode().strip()
         elif system == "Darwin": # macOS
-            return subprocess.check_output("system_profiler SPHardwareDataType | grep Serial | awk '{print $4}'", shell=True).decode().strip()
+            mac_serial = subprocess.check_output("/usr/sbin/ioreg -l | /usr/bin/grep IOPlatformSerialNumber | /usr/bin/awk -F'\"' '{print $4}'", shell=True).decode().strip()
+            return mac_serial if mac_serial else "Unknown-Serial"
     except Exception as e:
         pass
     return "Unknown-Serial"
