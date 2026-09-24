@@ -411,8 +411,33 @@ if __name__ == "__main__":
     main()
 EOF_PYTHON
 
-# Schedule the python script to run every 30 minutes
-PYTHON_PATH=$(which python3)
-(crontab -l 2>/dev/null; echo "*/30 * * * * $PYTHON_PATH $HOME/.aw_tracker/activity_tracker.py") | crontab -
+if [ "$(uname)" == "Darwin" ]; then
+    echo "Setting up macOS LaunchAgent for auto-sync..."
+    cat > ~/Library/LaunchAgents/com.activitywatch.sync.plist <<EOF_PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.activitywatch.sync</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/env</string>
+        <string>python3</string>
+        <string>$HOME/.aw_tracker/activity_tracker.py</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StartInterval</key>
+    <integer>1800</integer>
+</dict>
+</plist>
+EOF_PLIST
+    launchctl load ~/Library/LaunchAgents/com.activitywatch.sync.plist 2>/dev/null
+else
+    echo "Setting up Linux crontab for auto-sync..."
+    PYTHON_PATH=$(which python3)
+    (crontab -l 2>/dev/null; echo "*/30 * * * * $PYTHON_PATH $HOME/.aw_tracker/activity_tracker.py") | crontab -
+fi
 
 echo "Installation Complete! Chrome extension and ActivityWatch are now running silently."
