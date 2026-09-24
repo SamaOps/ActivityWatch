@@ -318,9 +318,8 @@ tr:hover td {
 
 .truncate-single {
   flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-all;
+  line-height: 1.4;
 }
 
 .loading-state {
