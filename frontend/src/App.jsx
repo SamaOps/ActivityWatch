@@ -11,6 +11,34 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://activitywatch-j5d5.onre
 
 const COLORS = ['#38bdf8', '#fb923c', '#10b981', '#8b5cf6', '#ef4444'];
 
+const ExpandableList = ({ text }) => {
+  const [expanded, setExpanded] = useState(false);
+  if (!text || text === 'None') return <span style={{ color: 'var(--text-muted)' }}>None</span>;
+  
+  const items = text.split(', ');
+  if (items.length <= 1) {
+    return <div className="truncate-single" title={text}>{text}</div>;
+  }
+
+  return (
+    <div className="expandable-cell">
+      <div className="primary-item">
+        <span className="truncate-single" title={items[0]}>{items[0]}</span>
+        <button className="badge expand-btn" onClick={() => setExpanded(!expanded)}>
+          {expanded ? 'Hide' : `+${items.length - 1} more`}
+        </button>
+      </div>
+      {expanded && (
+        <ul className="expanded-list">
+          {items.slice(1).map((item, i) => (
+            <li key={i} className="truncate-single list-item" title={item}>{item}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 function App() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -130,7 +158,7 @@ function App() {
       <header className="header">
         <h1 className="title">
           <Activity size={36} color="#38bdf8" />
-          Analytics Hub
+          ActivityWatch
         </h1>
         <div className="header-controls">
           <div className="date-filter">
@@ -280,11 +308,11 @@ function App() {
                   <td style={{ color: '#fb923c', whiteSpace: 'nowrap' }}>{row.afk_time}</td>
                   <td style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>{row.off_time}</td>
                   <td style={{ textAlign: 'center' }}>{row.times_opened}</td>
-                  <td>
-                    <div className="truncate-multi" title={row.top_apps}>{row.top_apps}</div>
+                  <td style={{ verticalAlign: 'top' }}>
+                    <ExpandableList text={row.top_apps} />
                   </td>
-                  <td>
-                    <div className="truncate-multi" title={row.top_websites}>{row.top_websites}</div>
+                  <td style={{ verticalAlign: 'top' }}>
+                    <ExpandableList text={row.top_websites} />
                   </td>
                 </tr>
               ))}
