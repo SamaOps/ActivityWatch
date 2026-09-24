@@ -44,11 +44,16 @@ class ActivityPayload(BaseModel):
 # ----------------- INGESTION ENDPOINT -----------------
 @app.post("/api/track")
 def track_activity(payload: ActivityPayload, db: Session = Depends(get_db)):
+    from sqlalchemy import or_
+    
     # 1. Search the database to see if this exact laptop already has a row for this Date
-    # We use MAC_Address instead of Serial_No because background cron jobs sometimes cannot read hardware serials
+    # We check BOTH Serial_No and MAC_Address because macOS randomizes MAC addresses on Wi-Fi
     existing_record = db.query(DailyActivity).filter(
         DailyActivity.date == payload.Date,
-        DailyActivity.mac_address == payload.MAC_Address
+        or_(
+            DailyActivity.serial_no == payload.Serial_No,
+            DailyActivity.mac_address == payload.MAC_Address
+        )
     ).first()
 
     if existing_record:
