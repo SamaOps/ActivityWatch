@@ -159,11 +159,13 @@ def get_daily_events(target_date):
                         afk_time += duration
                     was_afk = True
                     
-        # 2. Dynamic Mathematical Envelope: Calculate strictly between First Active and Last Active
-        if first_active and last_active:
-            total_period_seconds = (last_active - first_active).total_seconds()
-        else:
-            total_period_seconds = (end_local - start_local).total_seconds()
+        # 2. Dynamic Mathematical Envelope: Calculate based on Working Hours (8:00 AM to current time)
+        work_start = start_local # This is already set to 8:00 AM
+        work_end = end_local     # This is already bound by "now" if it's today
+        
+        total_period_seconds = (work_end - work_start).total_seconds()
+        if total_period_seconds < 0:
+            total_period_seconds = 0
         
         # Prevent duplicate watcher glitches from creating impossible time
         if active_time > total_period_seconds:
