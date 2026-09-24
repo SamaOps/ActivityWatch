@@ -166,7 +166,7 @@ function App() {
           <div className="stat-title">Avg Active Time</div>
           <div className="stat-value" style={{ color: 'var(--success)' }}>
             {filteredData.length > 0 ? 
-              `${Math.round(filteredData.reduce((acc, curr) => acc + parseTimeStr(curr.total_active_time), 0) / filteredData.length / 60)}h ${Math.round(filteredData.reduce((acc, curr) => acc + parseTimeStr(curr.total_active_time), 0) / filteredData.length % 60)}m` 
+              `${Math.floor(filteredData.reduce((acc, curr) => acc + parseTimeStr(curr.total_active_time), 0) / filteredData.length / 60)}h ${Math.floor(filteredData.reduce((acc, curr) => acc + parseTimeStr(curr.total_active_time), 0) / filteredData.length % 60)}m` 
               : '0h 0m'}
           </div>
         </div>
@@ -174,7 +174,7 @@ function App() {
           <div className="stat-title">Avg AFK Time</div>
           <div className="stat-value" style={{ color: '#fb923c' }}>
           {filteredData.length > 0 ? 
-              `${Math.round(filteredData.reduce((acc, curr) => acc + parseTimeStr(curr.afk_time), 0) / filteredData.length / 60)}h ${Math.round(filteredData.reduce((acc, curr) => acc + parseTimeStr(curr.afk_time), 0) / filteredData.length % 60)}m` 
+              `${Math.floor(filteredData.reduce((acc, curr) => acc + parseTimeStr(curr.afk_time), 0) / filteredData.length / 60)}h ${Math.floor(filteredData.reduce((acc, curr) => acc + parseTimeStr(curr.afk_time), 0) / filteredData.length % 60)}m` 
               : '0h 0m'}
           </div>
         </div>
