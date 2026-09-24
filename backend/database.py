@@ -23,6 +23,7 @@ class DailyActivity(Base):
     id = Column(Integer, primary_key=True, index=True)
     date = Column(String, index=True)
     serial_no = Column(String, index=True)
+    mac_address = Column(String, index=True)
     os = Column(String)
     day_of_week = Column(String)
     total_active_time = Column(String)

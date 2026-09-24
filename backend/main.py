@@ -29,6 +29,7 @@ def get_db():
 class ActivityPayload(BaseModel):
     Date: str   
     Serial_No: str
+    MAC_Address: str
     OS: str
     Day_of_Week: str
     Total_Active_Time: str
@@ -51,6 +52,7 @@ def track_activity(payload: ActivityPayload, db: Session = Depends(get_db)):
 
     if existing_record:
         # 2. If it already exists, UPDATE the row with the new, larger totals
+        existing_record.mac_address = payload.MAC_Address
         existing_record.total_active_time = payload.Total_Active_Time
         existing_record.afk_time = payload.AFK_Time
         existing_record.off_time = payload.Off_Time
@@ -67,6 +69,7 @@ def track_activity(payload: ActivityPayload, db: Session = Depends(get_db)):
         new_record = DailyActivity(
             date=payload.Date,
             serial_no=payload.Serial_No,
+            mac_address=payload.MAC_Address,
             os=payload.OS,
             day_of_week=payload.Day_of_Week,
             total_active_time=payload.Total_Active_Time,
