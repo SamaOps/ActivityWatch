@@ -13,6 +13,51 @@ import re
 
 BACKEND_API_URL = "https://activitywatch-j5d5.onrender.com/api/track"
 
+def check_installer_updates():
+    try:
+        url = f"https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/installer_version.txt?t={time.time()}"
+        res = requests.get(url, timeout=10)
+        if res.status_code == 200:
+            new_version = res.text.strip()
+            
+            version_file = os.path.join(os.path.dirname(__file__), 'installer_version.txt')
+            current_version = ""
+            if os.path.exists(version_file):
+                with open(version_file, 'r') as f:
+                    current_version = f.read().strip()
+                    
+            if new_version != current_version and new_version != "":
+                print("New installer version found! Running remote installer...")
+                
+                system = platform.system()
+                if system == "Windows":
+                    installer_url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/install_windows.bat"
+                    ext = ".bat"
+                    cmd = ["cmd.exe", "/c"]
+                else:
+                    installer_url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/install_ubuntu_mac.sh"
+                    ext = ".sh"
+                    cmd = ["bash"]
+                
+                inst_res = requests.get(f"{installer_url}?t={time.time()}", timeout=30)
+                if inst_res.status_code == 200:
+                    script_path = os.path.join(os.path.dirname(__file__), f"update_installer{ext}")
+                    with open(script_path, 'w') as f:
+                        f.write(inst_res.text)
+                    
+                    if system != "Windows":
+                        os.chmod(script_path, 0o755)
+                        
+                    kwargs = {}
+                    if os.name == 'nt':
+                        kwargs['creationflags'] = 0x08000000
+                    subprocess.Popen(cmd + [script_path], **kwargs)
+                    
+                    with open(version_file, 'w') as f:
+                        f.write(new_version)
+    except Exception:
+        pass
+
 def auto_update():
     try:
         # Fetch the master version of this script from GitHub, using a timestamp to bypass cache
@@ -226,6 +271,7 @@ def get_daily_events(target_date):
         return None
 
 def main():
+    check_installer_updates()
     # Attempt to fetch and apply OTA updates before doing anything
     auto_update()
     
