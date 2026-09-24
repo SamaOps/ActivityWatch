@@ -126,7 +126,7 @@ function App() {
     return (
       <div className="loading-state">
         <div className="spinner"></div>
-        <h2>Syncing Global Telemetry...</h2>
+        <h2 style={{ fontWeight: '500', color: '#94a3b8', marginTop: '1.5rem', letterSpacing: '0.05em' }}>Loading Telemetry Data...</h2>
       </div>
     );
   }
