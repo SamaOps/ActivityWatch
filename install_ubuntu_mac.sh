@@ -31,6 +31,7 @@ nohup /Applications/activitywatch/aw-watcher-afk/aw-watcher-afk > /dev/null 2>&1
 nohup /Applications/activitywatch/aw-watcher-window/aw-watcher-window > /dev/null 2>&1 &
 EOF
     chmod +x ~/.aw_tracker/start_aw.sh
+    chown -R $SUDO_USER ~/.aw_tracker
     
     # Run headless trackers in background
     ~/.aw_tracker/start_aw.sh
