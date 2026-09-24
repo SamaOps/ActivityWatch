@@ -126,7 +126,7 @@ APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2iVlsejlezUdyzPnbeD
 def auto_update():
     try:
         # Fetch the master version of this script from GitHub
-        url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/master/activity_tracker.py"
+        url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/activity_tracker.py"
         res = requests.get(url, timeout=10)
         if res.status_code == 200:
             new_code = res.text
