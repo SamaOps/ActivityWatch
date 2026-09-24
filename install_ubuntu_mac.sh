@@ -125,7 +125,7 @@ import time
 import uuid
 import re
 
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwU38WNbQ1x60Nih5KEeB_LHRVS8kq6X9DVgOXFzsxTRiViJNnB0qXvc-PgyG1YWjnB6A/exec"
+APPS_SCRIPT_URL = "https://activitywatch-j5d5.onrender.com/api/track"
 
 def auto_update():
     try:
