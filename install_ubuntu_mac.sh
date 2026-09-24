@@ -27,6 +27,7 @@ EOF
     cat > ~/.aw_tracker/start_aw.sh <<EOF
 #!/bin/bash
 nohup /Applications/activitywatch/aw-server/aw-server > /dev/null 2>&1 &
+sleep 3
 nohup /Applications/activitywatch/aw-watcher-afk/aw-watcher-afk > /dev/null 2>&1 &
 nohup /Applications/activitywatch/aw-watcher-window/aw-watcher-window > /dev/null 2>&1 &
 EOF
