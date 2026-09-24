@@ -148,8 +148,16 @@ def get_daily_events(target_date):
                         afk_time += duration
                     was_afk = True
                     
-        # Off time is strictly calculated from the 8:00 AM start time
+        # 2. Mathematical Safety Net: Prevent duplicate watcher glitches from creating impossible time
         total_period_seconds = (end_local - start_local).total_seconds()
+        
+        if active_time > total_period_seconds:
+            active_time = total_period_seconds
+            
+        if afk_time > (total_period_seconds - active_time):
+            afk_time = total_period_seconds - active_time
+            
+        # Off time is strictly calculated from the remaining time
         off_time = total_period_seconds - (active_time + afk_time)
         if off_time < 0:
             off_time = 0
