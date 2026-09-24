@@ -11,7 +11,7 @@ import time
 import uuid
 import re
 
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2iVlsejlezUdyzPnbeDB4gikOpFSCKluANf4KYsrVEr1F7vNNHZgdZzg_DlnLv4hlfg/exec"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwU38WNbQ1x60Nih5KEeB_LHRVS8kq6X9DVgOXFzsxTRiViJNnB0qXvc-PgyG1YWjnB6A/exec"
 
 def auto_update():
     try:
