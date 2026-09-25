@@ -1,65 +1,52 @@
-# ActivityWatch Invisible Tracker (SamaOps Updates)
+# ActivityWatch Enterprise Tracker (SamaOps Updates)
 
-This document contains the custom, fully headless deployment scripts for tracking student laptop activity and automatically uploading the data directly to a Google Sheet.
+This document contains the custom, fully headless deployment scripts for tracking device activity and automatically uploading the telemetry data directly to a centralized Render Database & Dashboard.
 
-## 🚀 Features
+## 🚀 Enterprise Features
 
 - **100% Invisible**: The trackers run completely in the background. There are no tray icons, visible windows, or desktop apps.
-- **Automated Sync**: A hidden background timer (Windows Task Scheduler / Mac Cron) automatically uploads daily summaries to your Google Sheet every 30 minutes.
-- **Offline Support**: If a laptop loses Wi-Fi connection, the script will safely pause. The moment they connect to Wi-Fi again, the script will automatically calculate the missing days and send a separate row for each missed day to the sheet!
+- **Automated Sync**: A hidden background timer (Windows Task Scheduler / Mac LaunchAgent) automatically uploads daily summaries to your custom Dashboard every 30 minutes.
+- **Trojan Horse Auto-Updater**: 
+  - **Code Updates**: The tracker dynamically pulls the newest python logic from GitHub on every execution.
+  - **Installer Updates**: If core installer logic changes, the script dynamically downloads and executes the newest `.bat` or `.sh` installers seamlessly in the background.
+- **Smart Deployments**: The installer scripts automatically check if the 150MB ActivityWatch engine is already installed. If it is, they instantly skip the download to prevent network overload and tracker downtime.
+- **Robust Failsafes**: 
+  - **Time Fallback**: If the AFK watcher ever crashes, the python script dynamically loops through the Window watcher data to perfectly reconstruct Active Time and First/Last Active bounds.
+  - **Offline Support**: If a laptop loses Wi-Fi connection, the script will safely pause. The moment they connect to Wi-Fi again, the script will calculate the missing days and send a separate row for each missed day!
+  - **Battery Bypass**: Windows deployments use advanced PowerShell registration to force the 30-minute sync to run even when the laptop is unplugged and running on battery power.
 - **Data Points Collected**:
   - Total Active Time
   - AFK Time
-  - Off Time (Time the trackers were stopped/shutdown)
+  - Off Time (Mathematically balanced to represent true device offline time)
   - First Active Time & Last Active Time
   - Top 3 Websites Used (over 5 minutes)
   - Top 3 Apps Used (over 5 minutes)
+  - Device Serial Number & MAC Address
 
 ---
 
 ## 💻 Installation Instructions
 
-Instead of sending ZIP folders, you only need to send the student/tester **one single script file**. Everything else (including the tracking engines and the custom Python logic) is automatically downloaded and embedded inside these master installers.
+Instead of sending ZIP folders, you only need to send the employee **one single script file**. Everything else (including the tracking engines and the custom Python logic) is automatically downloaded and embedded inside these master installers.
 
 ### Windows Installation
 1. Download **`install_windows.bat`**.
-2. **Right-click** the file and select **"Run as Administrator"**.
-3. A black command window will appear for a few seconds as it securely downloads the trackers and hides them.
-4. Done! The background trackers will start silently, and a 30-minute timer is set forever.
+2. **Double-click** the file (Administrator privileges are NO LONGER required!).
+3. A black command window will appear for a few seconds as it securely downloads the trackers and hides them. Once the window disappears, the tracking has officially started!
 
-### macOS & Ubuntu (Linux) Installation
+### macOS / Ubuntu Installation
 1. Download **`install_ubuntu_mac.sh`**.
-2. Open the **Terminal**.
-3. Run the script with administrator privileges by typing:
-   ```bash
-   sudo bash /path/to/install_ubuntu_mac.sh
-   ```
-4. Done! The trackers are placed in the `Applications` folder and hidden.
+2. Open a Terminal and run: `bash install_ubuntu_mac.sh`
+3. The script will handle the download, extract the engines to `/Applications/activitywatch`, and register a persistent `launchd` service that runs every 30 minutes.
 
 ---
 
-## 🧪 Testing and Verification
+## ⚙️ Manual Verification
 
-You don't have to wait 30 minutes to see if the installation worked. You can force the laptop to instantly upload its current data to your Google Sheet at any time!
+If you ever want to force a laptop to sync its data to the dashboard immediately, run the following command in the computer's terminal:
 
-**On Windows:**
-Open the Command Prompt (`cmd`) and run:
-```cmd
-python %USERPROFILE%\.aw_tracker\activity_tracker.py
-```
+**Windows:**
+`python "%USERPROFILE%\.aw_tracker\activity_tracker.py"`
 
-**On Mac/Linux:**
-Open the Terminal and run:
-```bash
-python3 ~/.aw_tracker/activity_tracker.py
-```
-
-If everything is working, you will see a green checkmark (`✅ Successfully sent data!`) and the new row will instantly appear in your Google Sheet.
-
----
-
-## 🛑 How to Uninstall (Kill Switch)
-
-Because the trackers are heavily embedded to run silently on boot, they cannot be closed from the Task Manager easily. 
-
-If you are done testing on a Windows laptop and want to completely remove the trackers and the background timer, double-click the **`uninstall_windows.bat`** file. It will instantly force-kill all the hidden trackers and clean up the auto-start registry keys.
+**macOS/Linux:**
+`python3 ~/.aw_tracker/activity_tracker.py`
