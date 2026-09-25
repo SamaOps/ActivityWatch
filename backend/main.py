@@ -17,7 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Dependency to get DB session
+# Dependency to get DB sessionw
 def get_db():
     db = SessionLocal()
     try:
@@ -58,6 +58,7 @@ def track_activity(payload: ActivityPayload, db: Session = Depends(get_db)):
 
     if existing_record:
         # 2. If it already exists, UPDATE the row with the new, larger totals
+        existing_record.serial_no = payload.Serial_No
         existing_record.mac_address = payload.MAC_Address
         existing_record.total_active_time = payload.Total_Active_Time
         existing_record.afk_time = payload.AFK_Time
