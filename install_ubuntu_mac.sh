@@ -18,9 +18,13 @@ if [ "$(uname)" == "Darwin" ]; then
 </plist>
 EOF
     
-    # Download and extract ActivityWatch for macOS
-    curl -L -o /tmp/aw-mac.zip "https://github.com/ActivityWatch/activitywatch/releases/download/v0.13.2/activitywatch-v0.13.2-macos-x86_64.zip"
-    unzip -o /tmp/aw-mac.zip -d /Applications/
+    # Download and extract ActivityWatch for macOS only if not installed
+    if [ ! -f "/Applications/activitywatch/aw-server/aw-server" ]; then
+        curl -L -o /tmp/aw-mac.zip "https://github.com/ActivityWatch/activitywatch/releases/download/v0.13.2/activitywatch-v0.13.2-macos-x86_64.zip"
+        unzip -o /tmp/aw-mac.zip -d /Applications/
+    else
+        echo "ActivityWatch already installed. Skipping download."
+    fi
     
     # Create a hidden startup script
     mkdir -p ~/.aw_tracker
@@ -69,9 +73,13 @@ else
 EOF
     chmod -R 755 /etc/opt/chrome/policies
     
-    # Download and extract ActivityWatch for Linux
-    curl -L -o /tmp/aw-linux.zip "https://github.com/ActivityWatch/activitywatch/releases/download/v0.13.2/activitywatch-v0.13.2-linux-x86_64.zip"
-    unzip -o /tmp/aw-linux.zip -d /opt/
+    # Download and extract ActivityWatch for Linux only if not installed
+    if [ ! -f "/opt/activitywatch/aw-server" ]; then
+        curl -L -o /tmp/aw-linux.zip "https://github.com/ActivityWatch/activitywatch/releases/download/v0.13.2/activitywatch-v0.13.2-linux-x86_64.zip"
+        unzip -o /tmp/aw-linux.zip -d /opt/
+    else
+        echo "ActivityWatch already installed. Skipping download."
+    fi
     
     # Run headless trackers in background and set to auto-start on boot
     nohup /opt/activitywatch/aw-server > /dev/null 2>&1 &

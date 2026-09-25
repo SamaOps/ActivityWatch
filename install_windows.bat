@@ -8,8 +8,12 @@ reg add "HKLM\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist" /v 1 /t
 :: Download and extract ActivityWatch for Windows
 echo Downloading ActivityWatch...
 mkdir "%USERPROFILE%\.aw_tracker" 2>nul
-curl.exe -L -o "%TEMP%\aw-win.zip" "https://github.com/ActivityWatch/activitywatch/releases/download/v0.13.2/activitywatch-v0.13.2-windows-x86_64.zip"
-tar.exe -xf "%TEMP%\aw-win.zip" -C "%USERPROFILE%\.aw_tracker"
+if not exist "%USERPROFILE%\.aw_tracker\activitywatch\aw-server\aw-server.exe" (
+    curl.exe -L -o "%TEMP%\aw-win.zip" "https://github.com/ActivityWatch/activitywatch/releases/download/v0.13.2/activitywatch-v0.13.2-windows-x86_64.zip"
+    tar.exe -xf "%TEMP%\aw-win.zip" -C "%USERPROFILE%\.aw_tracker"
+) else (
+    echo ActivityWatch engine already installed. Skipping download.
+)
 
 :: Create a VBScript to run trackers completely invisibly (no black windows)
 echo Set WshShell = CreateObject("WScript.Shell") > "%USERPROFILE%\.aw_tracker\start_aw.vbs"
