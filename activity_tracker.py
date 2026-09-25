@@ -225,13 +225,33 @@ def get_daily_events(target_date):
         if off_time < 0:
             off_time = 0
                     
-        # 2. Calculate top apps from window bucket
+        # 2. Calculate top apps from window bucket (and provide robust fallback for times)
         if window_bucket:
             events_url = f"{AW_URL}/{window_bucket}/events?start={start_str}&end={end_str}"
             events = requests.get(events_url).json()
             for e in events:
                 app = e['data'].get('app', 'Unknown')
-                top_apps[app] = top_apps.get(app, 0) + e.get('duration', 0)
+                duration = e.get('duration', 0)
+                top_apps[app] = top_apps.get(app, 0) + duration
+                
+                # Robust Fallback: Track first and last active from Window events too
+                ts_str = e.get('timestamp')
+                if ts_str:
+                    clean_ts = ts_str.split('.')[0].replace('Z', '')
+                    try:
+                        event_utc = datetime.strptime(clean_ts, "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+                        event_time = event_utc.astimezone()
+                        if first_active is None or event_time < first_active:
+                            first_active = event_time
+                        end_time_val = event_time + timedelta(seconds=duration)
+                        if last_active is None or end_time_val > last_active:
+                            last_active = end_time_val
+                    except Exception:
+                        pass
+                        
+            # If the AFK watcher crashed (active time is still 0 but apps were opened), use window duration as fallback
+            if active_time == 0 and len(events) > 0:
+                active_time = sum([e.get('duration', 0) for e in events])
                 
         # 3. Calculate top websites from web bucket
         if web_bucket:
