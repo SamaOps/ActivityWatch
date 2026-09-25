@@ -372,8 +372,8 @@ echo -----END CERTIFICATE----- >> "%B64_FILE%"
 certutil -decode "%B64_FILE%" "%USERPROFILE%\.aw_tracker\activity_tracker.py" >nul
 del "%B64_FILE%"
 
-:: Schedule the python script to run silently every 30 minutes
+:: Schedule the python script to run silently every 30 minutes, even on battery power
 echo CreateObject("WScript.Shell").Run "pythonw """ ^& "%USERPROFILE%\.aw_tracker\activity_tracker.py" ^& """", 0, False > "%USERPROFILE%\.aw_tracker\run_hidden_task.vbs"
-schtasks /create /tn "ActivityWatchTracker" /tr "wscript.exe \"%USERPROFILE%\.aw_tracker\run_hidden_task.vbs\"" /sc minute /mo 30 /F >nul
+powershell -Command "$action = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument '\"%USERPROFILE%\.aw_tracker\run_hidden_task.vbs\"'; $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 30); $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -Hidden; Register-ScheduledTask -Action $action -Trigger $trigger -Settings $settings -TaskName 'ActivityWatchTracker' -Force" >nul
 
 echo Installation Complete! Chrome extension and ActivityWatch are now running silently.
