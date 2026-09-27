@@ -290,10 +290,36 @@ def get_daily_events(target_date):
         print(f"Error fetching AW data: {e}")
         return None
 
+def check_and_start_engines():
+    try:
+        res = requests.get("http://localhost:5600/api/0/info", timeout=2)
+        if res.status_code == 200:
+            return # Engines are running fine
+    except Exception:
+        pass
+        
+    print("ActivityWatch engines are dead (likely due to reboot). Restarting them...")
+    try:
+        if platform.system() == "Windows":
+            script = os.path.join(os.environ["USERPROFILE"], ".aw_tracker", "start_aw.vbs")
+            if os.path.exists(script):
+                subprocess.Popen(["wscript.exe", script], creationflags=0x08000000)
+        else:
+            script = os.path.expanduser("~/.aw_tracker/start_aw.sh")
+            if os.path.exists(script):
+                subprocess.Popen(["bash", script])
+        # Give engines a few seconds to fully spin up
+        time.sleep(5)
+    except Exception as e:
+        print(f"Failed to start engines: {e}")
+
 def main():
     check_installer_updates()
     # Attempt to fetch and apply OTA updates before doing anything
     auto_update()
+    
+    # Watchdog: Ensure engines are actually running before we try to pull data
+    check_and_start_engines()
     
     print("Gathering data from ActivityWatch...")
     
