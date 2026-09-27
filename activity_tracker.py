@@ -55,6 +55,9 @@ def check_installer_updates():
                     
                     with open(version_file, 'w') as f:
                         f.write(new_version)
+                    
+                    # Exit immediately so the new installer can run cleanly without collision
+                    sys.exit(0)
     except Exception:
         pass
 
@@ -66,6 +69,11 @@ def auto_update():
         if res.status_code == 200:
             new_code = res.text
             
+            # Validation: Ensure the downloaded code is actually our python script and not corrupted
+            if "def main():" not in new_code or "import requests" not in new_code:
+                print("Downloaded update is corrupted. Aborting update.")
+                return
+                
             with open(__file__, 'r') as f:
                 current_code = f.read()
                 
@@ -314,6 +322,12 @@ def check_and_start_engines():
         print(f"Failed to start engines: {e}")
 
 def main():
+    # Global Jitter: Wait up to 5 minutes before doing ANYTHING to prevent DDoS on GitHub/Render.
+    # We skip this if run interactively by a user in the terminal.
+    if not sys.stdout.isatty():
+        delay = random.randint(1, 300)
+        time.sleep(delay)
+
     check_installer_updates()
     # Attempt to fetch and apply OTA updates before doing anything
     auto_update()
