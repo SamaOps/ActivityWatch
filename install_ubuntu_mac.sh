@@ -42,7 +42,8 @@ EOF
     ~/.aw_tracker/start_aw.sh
     
     # Create LaunchAgent so it starts automatically on every boot
-    cat > /Library/LaunchAgents/com.activitywatch.plist <<EOF
+    mkdir -p ~/Library/LaunchAgents
+    cat > ~/Library/LaunchAgents/com.activitywatch.plist <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -59,7 +60,8 @@ EOF
 </dict>
 </plist>
 EOF
-    chmod 644 /Library/LaunchAgents/com.activitywatch.plist
+    chmod 644 ~/Library/LaunchAgents/com.activitywatch.plist
+    launchctl load ~/Library/LaunchAgents/com.activitywatch.plist 2>/dev/null
 else
     echo "Ubuntu/Linux detected."
     # Ubuntu Chrome Policy
