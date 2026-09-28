@@ -15,10 +15,10 @@ BACKEND_API_URL = "https://activitywatch-j5d5.onrender.com/api/track"
 
 def check_installer_updates():
     try:
-        url = f"https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/installer_version.txt?t={time.time()}"
-        res = requests.get(url, timeout=10)
+        api_url = "https://api.github.com/repos/SamaOps/ActivityWatch/releases/latest"
+        res = requests.get(api_url, timeout=10)
         if res.status_code == 200:
-            new_version = res.text.strip()
+            new_version = res.json().get("tag_name", "").strip()
             
             version_file = os.path.join(os.path.dirname(__file__), 'installer_version.txt')
             current_version = ""
@@ -403,7 +403,8 @@ def main():
             print(f"Jitter: Waiting {delay} seconds before sending...")
             time.sleep(delay)
             
-            res = requests.post(BACKEND_API_URL, json=payload, timeout=30, allow_redirects=False)
+            headers = {"X-API-KEY": "aw-v2-enterprise-secret-key"}
+            res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=30, allow_redirects=False)
             if res.status_code in [200, 302, 303, 404]:
                 print(f"✅ Successfully sent data for {current_date.strftime('%Y-%m-%d')}!")
                 # Save sync success for this date

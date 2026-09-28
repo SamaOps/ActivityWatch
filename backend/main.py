@@ -1,12 +1,25 @@
-from fastapi import FastAPI, Depends, Query
+from fastapi import FastAPI, Depends, Query, HTTPException, Security, status
+from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from pydantic import BaseModel
 from typing import List, Optional
 from database import SessionLocal, DailyActivity
+import os
 
 app = FastAPI(title="ActivityWatch Tracker Backend")
+
+API_KEY = os.getenv("API_KEY", "aw-v2-enterprise-secret-key")
+api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
+
+def get_api_key(api_key_header: str = Security(api_key_header)):
+    if api_key_header == API_KEY:
+        return api_key_header
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Could not validate API key",
+    )
 
 # Allow dashboards from any domain to fetch data
 app.add_middleware(
@@ -45,7 +58,7 @@ class ActivityPayload(BaseModel):
 
 # ----------------- INGESTION ENDPOINT -----------------
 @app.post("/api/track")
-def track_activity(payload: ActivityPayload, db: Session = Depends(get_db)):
+def track_activity(payload: ActivityPayload, db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     from sqlalchemy import or_
     
     # 1. Search the database to see if this exact laptop already has a row for this Date
