@@ -563,8 +563,11 @@ if [ "$(uname)" == "Darwin" ]; then
     </array>
     <key>RunAtLoad</key>
     <true/>
-    <key>StartInterval</key>
-    <integer>10800</integer>
+    <key>WatchPaths</key>
+    <array>
+        <string>/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist</string>
+        <string>/Library/Preferences/SystemConfiguration/com.apple.wifi.message-tracer.plist</string>
+    </array>
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
