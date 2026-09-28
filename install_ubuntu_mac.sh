@@ -139,10 +139,10 @@ BACKEND_API_URL = "https://activitywatch-j5d5.onrender.com/api/track"
 
 def check_installer_updates():
     try:
-        url = f"https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/installer_version.txt?t={time.time()}"
-        res = requests.get(url, timeout=10)
+        api_url = "https://api.github.com/repos/SamaOps/ActivityWatch/releases/latest"
+        res = requests.get(api_url, timeout=10)
         if res.status_code == 200:
-            new_version = res.text.strip()
+            new_version = res.json().get("tag_name", "").strip()
             
             version_file = os.path.join(os.path.dirname(__file__), 'installer_version.txt')
             current_version = ""
@@ -365,11 +365,6 @@ def get_daily_events(target_date):
             
         if afk_time > (total_period_seconds - active_time):
             afk_time = total_period_seconds - active_time
-            
-        # Off time is the "gaps" between First Active and Last Active
-        off_time = total_period_seconds - (active_time + afk_time)
-        if off_time < 0:
-            off_time = 0
                     
         # 2. Calculate top apps from window bucket (and provide robust fallback for times)
         if window_bucket:
@@ -407,14 +402,19 @@ def get_daily_events(target_date):
                 url = e['data'].get('url', '')
                 if url:
                     top_websites[url] = top_websites.get(url, 0) + e.get('duration', 0)
+                    
+        # Off time is the "gaps" between First Active and Last Active (calculated after fallbacks)
+        off_time = total_period_seconds - (active_time + afk_time)
+        if off_time < 0:
+            off_time = 0
         
-        # Format top 3 apps (only apps used for > 5 minutes)
-        sorted_apps = sorted(top_apps.items(), key=lambda x: x[1], reverse=True)[:3]
-        top_apps_str = ", ".join([f"{app} ({format_duration(dur)})" for app, dur in sorted_apps if dur > 300])
+        # Format all apps (only apps used for > 1 minute)
+        sorted_apps = sorted(top_apps.items(), key=lambda x: x[1], reverse=True)
+        top_apps_str = ", ".join([f"{app} ({format_duration(dur)})" for app, dur in sorted_apps if dur > 60])
         
-        # Format top 3 websites (only sites visited for > 5 minutes)
-        sorted_sites = sorted(top_websites.items(), key=lambda x: x[1], reverse=True)[:3]
-        top_sites_str = ", ".join([f"{site} ({format_duration(dur)})" for site, dur in sorted_sites if dur > 300])
+        # Format all websites (only sites visited for > 1 minute)
+        sorted_sites = sorted(top_websites.items(), key=lambda x: x[1], reverse=True)
+        top_sites_str = ", ".join([f"{site} ({format_duration(dur)})" for site, dur in sorted_sites if dur > 60])
         
         first_active_str = first_active.strftime("%I:%M %p") if first_active else "None"
         last_active_str = last_active.strftime("%I:%M %p") if last_active else "None"
@@ -517,7 +517,7 @@ def main():
             "Top_Websites": aw_data["Top_Websites"],
             "Top_Apps": aw_data["Top_Apps"],
             "Location": get_location(),
-            "Last_Sync_Time": datetime.now().strftime("%I:%M %p")
+            "Last_Sync_Time": datetime.now().strftime("%m/%d/%Y %I:%M %p")
         }
         
         print("Preparing to send to Render Database...")
@@ -527,7 +527,8 @@ def main():
             print(f"Jitter: Waiting {delay} seconds before sending...")
             time.sleep(delay)
             
-            res = requests.post(BACKEND_API_URL, json=payload, timeout=30, allow_redirects=False)
+            headers = {"X-API-KEY": "aw-v2-enterprise-secret-key"}
+            res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=30, allow_redirects=False)
             if res.status_code in [200, 302, 303, 404]:
                 print(f"✅ Successfully sent data for {current_date.strftime('%Y-%m-%d')}!")
                 # Save sync success for this date
