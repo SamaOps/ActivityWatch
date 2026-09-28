@@ -284,13 +284,13 @@ def get_daily_events(target_date):
         if off_time < 0:
             off_time = 0
         
-        # Format top 3 apps (only apps used for > 5 minutes)
-        sorted_apps = sorted(top_apps.items(), key=lambda x: x[1], reverse=True)[:3]
-        top_apps_str = ", ".join([f"{app} ({format_duration(dur)})" for app, dur in sorted_apps if dur > 300])
+        # Format all apps (only apps used for > 1 minute)
+        sorted_apps = sorted(top_apps.items(), key=lambda x: x[1], reverse=True)
+        top_apps_str = ", ".join([f"{app} ({format_duration(dur)})" for app, dur in sorted_apps if dur > 60])
         
-        # Format top 3 websites (only sites visited for > 5 minutes)
-        sorted_sites = sorted(top_websites.items(), key=lambda x: x[1], reverse=True)[:3]
-        top_sites_str = ", ".join([f"{site} ({format_duration(dur)})" for site, dur in sorted_sites if dur > 300])
+        # Format all websites (only sites visited for > 1 minute)
+        sorted_sites = sorted(top_websites.items(), key=lambda x: x[1], reverse=True)
+        top_sites_str = ", ".join([f"{site} ({format_duration(dur)})" for site, dur in sorted_sites if dur > 60])
         
         first_active_str = first_active.strftime("%I:%M %p") if first_active else "None"
         last_active_str = last_active.strftime("%I:%M %p") if last_active else "None"

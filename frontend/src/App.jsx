@@ -11,10 +11,54 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://activitywatch-j5d5.onre
 
 const COLORS = ['#38bdf8', '#fb923c', '#10b981', '#8b5cf6', '#ef4444'];
 
-// Clean array parser
 const parseList = (text) => {
   if (!text || text === 'None') return [];
   return text.split(', ');
+};
+
+const ExpandableList = ({ items, renderItem }) => {
+  const [expanded, setExpanded] = useState(false);
+  
+  if (!items || items.length === 0) return <div style={{ color: '#64748b' }}>None</div>;
+  
+  if (items.length <= 2) return (
+    <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
+      {items.map((item, i) => (
+        <li key={i} style={{ padding: '6px 0', borderBottom: i !== items.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', wordBreak: 'break-all' }}>
+          {renderItem ? renderItem(item) : item}
+        </li>
+      ))}
+    </ul>
+  );
+  
+  const displayItems = expanded ? items : items.slice(0, 2);
+  return (
+    <div>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
+        {displayItems.map((item, i) => (
+          <li key={i} style={{ padding: '6px 0', borderBottom: i !== displayItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', wordBreak: 'break-all' }}>
+            {renderItem ? renderItem(item) : item}
+          </li>
+        ))}
+      </ul>
+      <button 
+        onClick={() => setExpanded(!expanded)} 
+        style={{ 
+          background: 'rgba(56, 189, 248, 0.1)', 
+          border: '1px solid rgba(56, 189, 248, 0.3)', 
+          borderRadius: '4px',
+          color: '#38bdf8', 
+          cursor: 'pointer', 
+          padding: '4px 10px', 
+          marginTop: '8px',
+          fontSize: '0.75rem', 
+          fontWeight: 600,
+          transition: 'all 0.2s'
+        }}>
+        {expanded ? "Show Less" : `+ ${items.length - 2} more`}
+      </button>
+    </div>
+  );
 };
 
 function App() {
@@ -298,26 +342,21 @@ function App() {
                     <td style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>{row.off_time}</td>
                     <td style={{ textAlign: 'center' }}>{row.times_opened}</td>
                     <td style={{ verticalAlign: 'top', minWidth: '220px' }}>
-                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
-                        {apps.length > 0 ? apps.map((app, i) => (
-                          <li key={i} style={{ padding: '6px 0', borderBottom: i !== apps.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>{app}</li>
-                        )) : <li style={{ color: '#64748b' }}>None</li>}
-                      </ul>
+                      <ExpandableList items={apps} />
                     </td>
                     <td style={{ verticalAlign: 'top', minWidth: '300px' }}>
-                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem' }}>
-                        {websites.length > 0 ? websites.map((site, i) => (
-                          <li key={i} style={{ padding: '6px 0', borderBottom: i !== websites.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', wordBreak: 'break-all' }}>
-                            {site.startsWith('http') ? (
-                              <a href={site.split(' ')[0]} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'none' }}>
-                                {site}
-                              </a>
-                            ) : (
-                              site
-                            )}
-                          </li>
-                        )) : <li style={{ color: '#64748b' }}>None</li>}
-                      </ul>
+                      <ExpandableList 
+                        items={websites} 
+                        renderItem={(site) => (
+                          site.startsWith('http') ? (
+                            <a href={site.split(' ')[0]} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'none' }}>
+                              {site}
+                            </a>
+                          ) : (
+                            site
+                          )
+                        )}
+                      />
                     </td>
                     <td style={{ whiteSpace: 'nowrap', color: '#8b5cf6', fontSize: '0.9rem' }}>{row.last_sync_time || 'N/A'}</td>
                     <td style={{ minWidth: '150px' }}>{row.location || 'Unknown Location'}</td>
