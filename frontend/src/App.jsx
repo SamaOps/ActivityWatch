@@ -136,7 +136,7 @@ function App() {
   }, [data, searchTerm, startDate, endDate]);
 
   // Analytics Processing
-  const { chartData, osData } = useMemo(() => {
+  const { chartData, osData, dayData, stats } = useMemo(() => {
     // Group by Date for Area Chart
     const dateMap = {};
     const osCount = {};
