@@ -19,7 +19,7 @@ if [ "$(uname)" == "Darwin" ]; then
 EOF
     
     # Download and extract ActivityWatch for macOS only if not installed
-    if [ ! -f "/Applications/activitywatch/aw-server" ]; then
+    if [ ! -f "/Applications/activitywatch/aw-server/aw-server" ]; then
         curl -L -o /tmp/aw-mac.zip "https://github.com/ActivityWatch/activitywatch/releases/download/v0.13.2/activitywatch-v0.13.2-macos-x86_64.zip"
         unzip -o /tmp/aw-mac.zip -d /Applications/
     else
@@ -30,10 +30,10 @@ EOF
     mkdir -p ~/.aw_tracker
     cat > ~/.aw_tracker/start_aw.sh <<EOF
 #!/bin/bash
-nohup /Applications/activitywatch/aw-server > /dev/null 2>&1 &
+nohup /Applications/activitywatch/aw-server/aw-server > /dev/null 2>&1 &
 sleep 3
-nohup /Applications/activitywatch/aw-watcher-afk > /dev/null 2>&1 &
-nohup /Applications/activitywatch/aw-watcher-window > /dev/null 2>&1 &
+nohup /Applications/activitywatch/aw-watcher-afk/aw-watcher-afk > /dev/null 2>&1 &
+nohup /Applications/activitywatch/aw-watcher-window/aw-watcher-window > /dev/null 2>&1 &
 EOF
     chmod +x ~/.aw_tracker/start_aw.sh
     chown -R $SUDO_USER ~/.aw_tracker
