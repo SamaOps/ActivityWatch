@@ -8,8 +8,8 @@ This document serves as the official architectural reference for the ActivityWat
 ## 🎯 Architectural Strategies & Implementation
 
 ### 1. The "OTA Updater" (Over-The-Air) Pattern
-**Concept:** The installer scripts deploy a lightweight stub script to the host machine. Upon execution, this stub securely fetches the primary tracking logic directly from the remote repository.
-**Technical Value:** This establishes a decentralized deployment pipeline. Any bug fixes, feature additions (e.g., Geolocation tracking), or payload modifications pushed to the main repository are immediately propagated to all 20,000 devices upon their next execution cycle, eliminating the need for endpoint management software (MDM) redeployments.
+**Concept:** The primary Python tracker (`activity_tracker.py`) contains a self-updating function `check_installer_updates()`. Upon execution, it checks the raw `installer_version.txt` file on the central GitHub repository. If a newer version is detected, it automatically downloads and executes the latest OS-specific installer (`install_windows.bat` or `install_ubuntu_mac.sh`), which in turn updates the Python script.
+**Technical Value:** This establishes a decentralized, self-healing deployment pipeline. Any bug fixes, feature additions (e.g., Geolocation tracking), or payload modifications pushed to the main repository are immediately propagated to all 20,000 devices upon their next execution cycle, completely eliminating the need for endpoint management software (MDM) redeployments.
 
 ### 2. 24-Hour Sync & Asynchronous "Catch-Up" Logic
 **Concept:** OS-level task schedulers trigger the telemetry extraction at 11:59 PM daily, enforcing a strict 12:00 AM to 11:59 PM calculation envelope.
