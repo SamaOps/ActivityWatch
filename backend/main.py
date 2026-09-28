@@ -125,3 +125,10 @@ def get_unique_devices(db: Session = Depends(get_db)):
 @app.get("/")
 def read_root():
     return {"status": "Online", "message": "ActivityWatch Backend is fully operational!"}
+
+@app.get("/api/delete_test")
+def delete_test_data(db: Session = Depends(get_db)):
+    """Temporary endpoint to delete test data."""
+    deleted_count = db.query(DailyActivity).filter(DailyActivity.serial_no == "TEST").delete()
+    db.commit()
+    return {"status": "success", "message": f"Deleted {deleted_count} TEST records!"}
