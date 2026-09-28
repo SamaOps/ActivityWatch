@@ -71,6 +71,11 @@ function App() {
 
       // Date range
       let matchesDate = true;
+      
+      // Filter out test records
+      if (item.serial_no === 'TEST') {
+        return false;
+      }
       if (startDate && endDate && item.date) {
         try {
           const itemDate = parse(item.date, 'MM/dd/yyyy', new Date());
