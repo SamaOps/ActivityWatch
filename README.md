@@ -1,301 +1,80 @@
-<img title="ActivityWatch" src="https://activitywatch.net/img/banner.png" align="center">
-
-<p align="center">
-  <b>Records what you do</b> so that you can <i>know how you've spent your time</i>.
-  <br>
-  All in a secure way where <i>you control the data</i>.
-</p>
-
-<p align="center">
-  <a href="https://twitter.com/ActivityWatchIt">
-    <img title="Twitter follow" src="https://img.shields.io/twitter/follow/ActivityWatchIt.svg?style=social&label=Follow"/>
-  </a>
-  <a href="https://github.com/ActivityWatch/activitywatch">
-    <img title="Star on GitHub" src="https://img.shields.io/github/stars/ActivityWatch/activitywatch.svg?style=social&label=Star">
-  </a>
-
-  <br>
-
-  <b>
-    <a href="https://activitywatch.net/">Website</a>
-    — <a href="https://forum.activitywatch.net/">Forum</a>
-    — <a href="https://docs.activitywatch.net">Documentation</a>
-    — <a href="https://github.com/ActivityWatch/activitywatch/releases">Releases</a>
-  </b>
-
-  <br>
-
-  <b>
-    <a href="https://activitywatch.net/contributors/">Contributor stats</a>
-    — <a href="https://activitywatch.net/ci/">CI overview</a>
-  </b>
-</p>
-
-<p align="center">
-  <a href="https://github.com/ActivityWatch/activitywatch/actions?query=branch%3Amaster">
-    <img title="Build Status GitHub" src="https://github.com/ActivityWatch/activitywatch/workflows/Build/badge.svg?branch=master" />
-  </a>
-  <a href="https://ci.appveyor.com/project/ErikBjare/activitywatch">
-    <img title="Build Status Appveyor" src="https://ci.appveyor.com/api/projects/status/vm7g9sdfi2vgix6n?svg=true" />
-  </a>
-  <a href="https://docs.activitywatch.net">
-    <img title="Documentation" src="https://readthedocs.org/projects/activitywatch/badge/?version=latest" />
-  </a>
-
-  <br>
-
-  <a href="https://github.com/ActivityWatch/activitywatch/releases">
-    <img title="Latest release" src="https://img.shields.io/github/release-pre/ActivityWatch/activitywatch.svg">
-  </a>
-  <a href="https://github.com/ActivityWatch/activitywatch/releases">
-    <img title="Total downloads (GitHub Releases)" src="https://img.shields.io/github/downloads/ActivityWatch/activitywatch/total.svg" />
-  </a>
-  <a href="https://discord.gg/vDskV9q">
-    <img title="Discord" src="https://img.shields.io/discord/755040852727955476" />
-  </a>
-
-  <br>
-
-  <a href="https://activitywatch.net/donate/">
-    <img title="Donated" src="https://img.shields.io/badge/budget-~%24275%2Fmo%20from%2044%20supporters-orange.svg" />
-  </a>
-  <a href="https://doi.org/10.5281/zenodo.4957165">
-    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.4957165.svg" />
-  </a>
-</p>
-
-<!--
-# TODO: Best practices badge that we should work towards, see issue #42.
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/873/badge)](https://bestpractices.coreinfrastructure.org/projects/873)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2FActivityWatch%2Factivitywatch.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2FActivityWatch%2Factivitywatch?ref=badge_shield)
--->
-
-
-*Do you want to receive email updates on major announcements?*<br>
-***[Signup for the newsletter](http://eepurl.com/cTU6QX)!***
-
-<details>
- <summary>Table of Contents</summary>
-
- * [About](#about)
-    * [Screenshots](#screenshots)
-    * [Is this yet another time tracker?](#is-this-yet-another-time-tracker)
-       * [Feature comparison](#feature-comparison)
-    * [Installation &amp; Usage](#installation--usage)
- * [About this repository](#about-this-repository)
-    * [Server](#server)
-    * [Watchers](#watchers)
-    * [Libraries](#libraries)
- * [Contributing](#contributing)
-</details>
-
-## About
-
-The goal of ActivityWatch is simple: *Enable the collection of as much valuable lifedata as possible without compromising user privacy.*
-
-We've worked towards this goal by creating an application for safe storage of the data on the user's local machine and as well as a set of watchers which record data such as:
-
- - Currently active application and the title of its window
- - Currently active browser tab and its title and URL
- - Keyboard and mouse activity, to detect if you are AFK ("away from keyboard") or not
-
-It is up to you as user to collect as much as you want, or as little as you want (and we hope some of you will help write watchers so we can collect more).
-
-### Screenshots
-
-<span><img src="https://activitywatch.net/img/screenshots/screenshot-v0.9.3-activity.png"   width="45%"></span>
-<span><img src="https://activitywatch.net/img/screenshots/screenshot-v0.8.0b9-timeline.png" width="50%"></span>
-
-You can find more (and newer) screenshots on [the website](https://activitywatch.net/screenshots/).
-
-## How to cite ActivityWatch
-
-If you use ActivityWatch in your research, please cite it. This helps us track
-academic impact and keeps the project sustainable. The canonical reference is
-the Zenodo DOI:
-
-**DOI: [10.5281/zenodo.4957165](https://doi.org/10.5281/zenodo.4957165)**
-
-Ready-to-paste BibTeX for your methods section:
-
-```bibtex
-@software{activitywatch,
-  author       = {Bjäreholt, Erik and Bjäreholt, Johan},
-  title        = {ActivityWatch},
-  year         = {2024},
-  publisher    = {Zenodo},
-  version      = {0.13.2},
-  doi          = {10.5281/zenodo.4957165},
-  url          = {https://github.com/ActivityWatch/activitywatch}
-}
-```
-
-If you publish a paper that uses ActivityWatch, we would love to hear about it —
-please let us know on [the forum](https://forum.activitywatch.net/).
-
-
-## Installation & Usage
-
-Downloads are available on the [releases page](https://github.com/ActivityWatch/activitywatch/releases).
-
-For instructions on how to get started, please see the [guide in the documentation](https://docs.activitywatch.net/en/latest/getting-started.html).
-
-Interested in building from source? [There's a guide for that too](https://docs.activitywatch.net/en/latest/installing-from-source.html).
-
-## Is this yet another time tracker?
-
-Yes, but we found that most time trackers lack one or more important features.
-
-**Common dealbreakers:**
-
- - Not open source
- - The user does not own the data (common with non-open source options)
- - Lack of synchronization (and when available: it's centralized and the sync server knows everything)
- - Difficult to setup/use (most open source options tend to target programmers)
- - Low data resolution (low level of detail, does not store raw data, long intervals between entries)
- - Hard or impossible to extend (collecting more data is not as simple as it could be)
-
-**To sum it up:**
-
- - Closed source solutions suffer from privacy issues and limited features.
- - Open source solutions aren't developed with end-users in mind and are usually not written to be easily extended (they lack a proper API). They also lack synchronization.
-
-We have a plan to address all of these and we're well on our way. See the table below for our progress.
-
-
-### Feature comparison
-
-##### Basics
-
-|               | User owns data     | GUI                | Sync                       | Open Source        |
-| ------------- |:------------------:|:------------------:|:--------------------------:|:------------------:|
-| ActivityWatch | :white_check_mark: | :white_check_mark: | [WIP][sync], decentralized | :white_check_mark: |
-| [Selfspy]       | :white_check_mark: | :x:                | :x:                        | :white_check_mark: |
-| [ulogme]        | :white_check_mark: | :white_check_mark: | :x:                        | :white_check_mark: |
-| [RescueTime]    | :x:                | :white_check_mark: | Centralized                | :x:                |
-| [WakaTime]      | :x:                | :white_check_mark: | Centralized                | Clients            |
-
-[sync]: https://github.com/ActivityWatch/activitywatch/issues/35
-[Selfspy]: https://github.com/selfspy/selfspy
-[ulogme]: https://github.com/karpathy/ulogme
-[RescueTime]: https://www.rescuetime.com/
-[WakaTime]: https://wakatime.com/
-
-##### Platforms
-<!-- TODO: Replace Platform names with icons  -->
-
-|               | Windows            | macOS              | Linux              | Android            | iOS                 |
-| ------------- |:------------------:|:------------------:|:------------------:|:------------------:|:-------------------:|
-| ActivityWatch | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |:x:                  |
-| Selfspy       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |:x:                  |
-| ulogme        | :x:                | :white_check_mark: | :white_check_mark: | :x:                |:x:                  |
-| RescueTime    | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |Limited functionality|
-
-##### Tracking
-
-|               | App & Window Title | AFK                | Browser Extensions | Editor Plugins     | Extensible            |
-| ------------- |:------------------:|:------------------:|:------------------:|:------------------:|:---------------------:|
-| ActivityWatch | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:    |
-| Selfspy       | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                   |
-| ulogme        | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                   |
-| RescueTime    | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                   |
-| WakaTime      | :x:                | :white_check_mark: | :white_check_mark: | :white_check_mark: | Only for text editors |
-
-For a complete list of the things ActivityWatch can track, [see the page on *watchers* in the documentation](https://docs.activitywatch.net/en/latest/watchers.html).
-
-
-## Architecture
-
-```mermaid
-graph TD;
-  aw-qt[<a href='https://github.com/ActivityWatch/aw-qt'>aw-qt</a>];
-  aw-notify[<a href='https://github.com/ActivityWatch/aw-notify-rs'>aw-notify</a>];
-  aw-server[<a href='https://github.com/ActivityWatch/aw-server'>aw-server</a>];
-  aw-webui[<a href='https://github.com/ActivityWatch/aw-webui'>aw-webui</a>];
-  aw-watcher-window[<a href='https://github.com/ActivityWatch/aw-watcher-window'>aw-watcher-window</a>];
-  aw-watcher-afk[<a href='https://github.com/ActivityWatch/aw-watcher-afk'>aw-watcher-afk</a>];
-  aw-watcher-web[<a href='https://github.com/ActivityWatch/aw-watcher-web'>aw-watcher-web</a>];
-  aw-sync[<a href='https://github.com/ActivityWatch/aw-server-rust/tree/master/aw-sync'>aw-sync</a>];
-
-  aw-qt -- Manages --> aw-server;
-  aw-qt -- Manages --> aw-notify -- Queries --> aw-server;
-  aw-qt -- Manages --> aw-watcher-window -- Watches --> S1[Active window] -- Heartbeats --> aw-server;
-  aw-qt -- Manages --> aw-watcher-afk -- Watches --> S2[AFK status] -- Heartbeats --> aw-server;
-  Browser -- Manages --> aw-watcher-web -- Watches --> S3[Active tab] -- Heartbeats --> aw-server;
-  SF -- Dropbox/Syncthing/etc --> SF;
-  aw-server <-- Push/Pull --> aw-sync <-- Read/Write --> SF[Sync folder];
-  aw-server -- Serves --> aw-webui -- Queries --> aw-server;
-
-  %% User -- Interacts --> aw-webui;
-  %% User -- Observes --> aw-notify;
-  %% User -- Interacts --> aw-qt;
-
-classDef lightMode fill:#FFFFFF, stroke:#333333, color:#333333;
-classDef darkMode fill:#333333, stroke:#FFFFFF, color:#FFFFFF;
-
-classDef lightModeLinks stroke:#333333;
-classDef darkModeLinks stroke:#FFFFFF;
-
-class A,B,C,D,E,G lightMode;
-class A,B,C,D,E,G darkMode;
-
-%% linkStyle 0 stroke:#FF4136, stroke-width:2px;
-%% linkStyle 1 stroke:#1ABC9C, stroke-width:2px;
-```
-
-## About this repository
-
-This repo is a bundle of the core components and official modules of ActivityWatch (managed with `git submodule`). Its primary use is as a meta-package providing all the components in one repo; enabling easier packaging and installation. It is also where releases of the full suite are published (see [releases](https://github.com/ActivityWatch/activitywatch/releases)).
-
-### Server
-
-ActivityWatch has two server implementations:
-
-- `aw-server` (Python) - The current default implementation
-- `aw-server-rust` - A Rust implementation that is the planned future default
-
-Both provide a REST API to a datastore and query engine, and serve the web interface developed in the `aw-webui` project (which provides the frontend).
-
-The REST API includes:
-
- - Access to a datastore suitable for timeseries/timeperiod-data organized in "buckets" (containers grouping related activity data by metadata like client type or hostname)
- - **Buckets API:** Create, retrieve, and delete data buckets
- - **Events API:** Read and write timestamped events within buckets
- - **Heartbeat API:** Watchers use heartbeat signals to update the current state of activity (e.g., active application, AFK status)
- - **Query API:** simple query scripting language for filtering, merging, grouping, and transforming events
- - **Client libraries:** Language-specific libraries like `aw-client` (Python), `aw-client-js`, and `aw-client-rust` that wrap REST endpoints for programmatic access
-
-The frontend (`aw-webui`) includes:
-
- - **Data visualization:** Dashboard and timeline views showing activity summaries with detailed breakdowns of app usage, web browsing, and user-defined categories
- - **Query explorer:** Browser-based interface for writing, executing, and debugging queries with real-time results
- - **Activity browser:** Navigate through historical data with filtering by date ranges, applications, websites, and custom categories
- - **Raw data access:** View and browse individual events from all tracking buckets with detailed metadata
- - **Export functionality:** Export activity data in JSON format (individual buckets or complete datasets) via web interface or REST API
-
-### Watchers
-
-ActivityWatch comes pre-installed with two watchers:
-
- - `aw-watcher-afk` tracks the user active/inactive state from keyboard and mouse input
- - `aw-watcher-window` tracks the currently active application and its window title.
-
-There are lots of other watchers for ActivityWatch which can track more types of activity. Like `aw-watcher-web` which tracks time spent on websites, multiple editor watchers which track spent time coding, and many more! A full list of watchers can be found in [the documentation](https://docs.activitywatch.net/en/latest/watchers.html).
-
-### Libraries
-
- - `aw-core` - core library, provides no runnable modules
- - `aw-client` - client library, useful when writing watchers
-
-### Folder structure
-
-<span><img src="https://raw.githubusercontent.com/ActivityWatch/activitywatch/master/diagram.svg" width="60%"></span>
-
-## Contributing
-
-Want to help? Great! Check out the [CONTRIBUTING.md file](./CONTRIBUTING.md)!
-
-## Questions and support
-
-Have a question, suggestion, problem, or just want to say hi? Post on [the forum](https://forum.activitywatch.net/)!
-
+# ActivityWatch V2 Enterprise Architecture & System Documentation
+
+## 📖 Introduction
+This document serves as the official architectural reference for the ActivityWatch V2 Telemetry System. It details the technical implementation, data flow, and scaling strategies used to manage telemetry for 20,000+ endpoint devices, ensuring guaranteed data integrity and zero manual maintenance.
+
+---
+
+## 🎯 Architectural Strategies & Implementation
+
+### 1. The "OTA Updater" (Over-The-Air) Pattern
+**Concept:** The primary Python tracker (`activity_tracker.py`) contains a self-updating function `check_installer_updates()`. Upon execution, it queries the official GitHub Releases API (`api.github.com/.../releases/latest`) to check the `tag_name`. If a newer version is detected, it automatically downloads and executes the latest OS-specific installer (`install_windows.bat` or `install_ubuntu_mac.sh`), which in turn updates the tracker.
+**Technical Value:** This establishes a decentralized, self-healing deployment pipeline. Any bug fixes, feature additions (e.g., Geolocation tracking), or payload modifications pushed to the main repository are immediately propagated to all 20,000 devices upon their next execution cycle, completely eliminating the need for endpoint management software (MDM) redeployments.
+
+### 2. 24-Hour Sync & Asynchronous "Catch-Up" Logic
+**Concept:** OS-level task schedulers trigger the telemetry extraction at 11:59 PM daily, enforcing a strict 12:00 AM to 11:59 PM calculation envelope.
+**Technical Value:** 
+- **Ideal State:** Devices online at 11:59 PM transmit a mathematically perfect 24-hour block of telemetry.
+- **Offline State:** If a device is powered off at 11:59 PM, the sync fails silently. The script utilizes a local state file (`last_sync.txt`). Upon the next successful network connection (e.g., 9:00 AM the following morning), the script iterates chronologically from the last successful sync date to the current date, retroactively building and transmitting the missing 24-hour JSON payloads. This guarantees **zero data loss**.
+
+### 3. Traffic Throttling via "Global Jitter"
+**Concept:** Before transmitting the JSON payload via HTTP POST, the script initiates a `time.sleep()` using a randomized integer between 1 and 300 seconds (5 minutes).
+**Technical Value:** A synchronized 11:59 PM execution across 20,000 devices would result in a massive traffic spike, effectively executing a self-inflicted DDoS attack on the backend infrastructure. The introduction of global jitter evenly distributes the HTTP requests across a 5-minute window, allowing a standard, cost-effective server to ingest the payloads without requiring highly scaled AWS SQS or Redis queues.
+
+### 4. IP-Based Geolocation Integration
+**Concept:** The tracker executes a non-blocking, rate-limited HTTP GET request to `ip-api.com` to resolve the external IP address to a City, State, and Country.
+**Technical Value:** This negates the need to request OS-level location permissions, avoiding intrusive prompts to the end user. Network exceptions (e.g., firewall blocks, API rate limits) are caught gracefully, defaulting the payload to "Unknown Location" to ensure the core telemetry transmission is never interrupted.
+
+---
+
+## 📂 Core System Components & File Breakdown
+
+### 1. `activity_tracker.py` (The Core Engine)
+**Role:** The primary Python execution script running on all endpoint laptops.
+**Architecture & Responsibilities:**
+- **ActivityWatch API Interfacing:** Queries `localhost:5600` to extract raw AFK and Window event buckets.
+- **Data Processing:** Calculates precise Active Time, AFK Time, and Off Time based on a dynamic envelope (Midnight to current execution time).
+- **Fallback Mechanisms:** If the AFK watcher fails, it intelligently recalculates Active Time strictly from the Window event durations.
+- **State Management:** Reads and writes to `last_sync.txt` to manage the offline catch-up loop.
+- **Network Transmission:** Packages the calculated data, System OS, Geolocation, and MAC/Serial identifiers into a JSON payload and POSTs it to the remote FastAPI backend.
+
+### 2. `install_windows.bat` (Windows Deployment)
+**Role:** The zero-interaction installation payload for Windows endpoints.
+**Architecture & Responsibilities:**
+- Downloads and installs the ActivityWatch binaries silently via PowerShell.
+- Decodes the Base64-encoded `activity_tracker.py` script directly into the `%USERPROFILE%\.aw_tracker` directory.
+- Registers a hidden `wscript.exe` VBScript to execute the Python tracker without flashing a command prompt window to the user.
+- **Task Scheduler:** Interfaces with Windows Task Scheduler to register two execution triggers:
+  1. A daily run explicitly at `23:59:00` for the full day telemetry dump.
+  2. A Network Connectivity Event Trigger (EventID 10000) to instantly sync whenever the laptop connects to the internet.
+
+### 3. `install_ubuntu_mac.sh` (Unix Deployment)
+**Role:** The zero-interaction installation payload for macOS and Linux endpoints.
+**Architecture & Responsibilities:**
+- Identifies the host OS and downloads the appropriate ActivityWatch binaries (DMG for Mac, ZIP for Linux) natively using `curl`.
+- Installs ActivityWatch to `/Applications` (Mac) or `/opt` (Linux) silently.
+- **macOS Scheduler (LaunchAgent):** Generates a `com.activitywatch.sync.plist` file in `~/Library/LaunchAgents`. Configures a `StartCalendarInterval` (23:59) and a `WatchPaths` array to instantly trigger a sync whenever the macOS Airport (Wi-Fi) state file changes (network connectivity).
+- **Linux Scheduler (Crontab):** Injects specific CRON expressions (`59 23 * * *` and `0 */3 * * *`) into the user's crontab.
+
+### 4. `update_scripts.py` (The Compiler)
+**Role:** A developer-side utility used to build the final installers.
+**Architecture & Responsibilities:**
+- Reads the raw `activity_tracker.py` file, converts it into a Base64 string, and automatically injects it into `install_windows.bat`.
+- Injects the raw python code into the heredoc block of `install_ubuntu_mac.sh`.
+- Ensures that when the installers are distributed, they contain the absolute latest tracking logic natively.
+
+### 5. Backend Components (`backend/main.py` & `backend/database.py`)
+**Role:** The centralized cloud ingestion server (FastAPI) and storage layer (SQLAlchemy / PostgreSQL).
+**Architecture & Responsibilities:**
+- Defines the strict expected JSON schema (`ActivityPayload`).
+- Receives the payload and searches the DB for an existing `Serial_No + Date` composite key.
+- Performs an UPSERT (Update if exists, Insert if new) to ensure multiple heartbeats throughout the day safely overwrite old data rather than creating duplicate rows.
+- **Authentication:** Enforces security by requiring a hardcoded secret `X-API-KEY` header on the `/api/track` endpoint, rejecting unauthorized spam/bot traffic with a `403 Forbidden`.
+- Hosts the REST API endpoints (`/api/data`, `/api/devices`) that feed the React frontend.
+
+### 6. Frontend Dashboard (`frontend/src/App.jsx`)
+**Role:** The React/Vite web application for data visualization.
+**Architecture & Responsibilities:**
+- Fetches the telemetry payload from the backend.
+- Provides real-time filtering, date-range selections, and dynamic search (by Serial, MAC, or Date).
+- Renders analytical charts (Activity Trends, OS Distributions) using Recharts.
