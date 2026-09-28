@@ -121,6 +121,20 @@ def get_serial_number():
         pass
     return "Unknown-Serial"
 
+def get_location():
+    try:
+        res = requests.get("http://ip-api.com/json", timeout=5)
+        if res.status_code == 200:
+            data = res.json()
+            city = data.get("city", "")
+            region = data.get("regionName", "")
+            country = data.get("country", "")
+            if city and country:
+                return f"{city}, {region}, {country}".strip(", ")
+    except Exception:
+        pass
+    return "Unknown Location"
+
 def format_duration(seconds):
     hours = int(seconds // 3600)
     minutes = int((seconds % 3600) // 60)
@@ -377,7 +391,9 @@ def main():
             "Last_Active": aw_data["Last_Active"],
             "Times_Opened": aw_data["Times_Opened"],
             "Top_Websites": aw_data["Top_Websites"],
-            "Top_Apps": aw_data["Top_Apps"]
+            "Top_Apps": aw_data["Top_Apps"],
+            "Location": get_location(),
+            "Last_Sync_Time": datetime.now().strftime("%I:%M %p")
         }
         
         print("Preparing to send to Render Database...")

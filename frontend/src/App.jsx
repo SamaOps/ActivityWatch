@@ -260,6 +260,8 @@ function App() {
                 <th>OS</th>
                 <th>First Active</th>
                 <th>Last Active</th>
+                <th>Last Sync</th>
+                <th>Location</th>
                 <th>Active Time</th>
                 <th>AFK Time</th>
                 <th>Off Time</th>
@@ -286,6 +288,8 @@ function App() {
                     </td>
                     <td style={{ whiteSpace: 'nowrap' }}>{row.first_active}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>{row.last_active}</td>
+                    <td style={{ whiteSpace: 'nowrap', color: '#8b5cf6', fontSize: '0.9rem' }}>{row.last_sync_time || 'N/A'}</td>
+                    <td style={{ minWidth: '150px' }}>{row.location || 'Unknown Location'}</td>
                     <td style={{ color: 'var(--success)', fontWeight: 600, whiteSpace: 'nowrap' }}>{row.total_active_time}</td>
                     <td style={{ color: '#fb923c', whiteSpace: 'nowrap' }}>{row.afk_time}</td>
                     <td style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>{row.off_time}</td>

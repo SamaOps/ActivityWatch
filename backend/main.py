@@ -40,6 +40,8 @@ class ActivityPayload(BaseModel):
     Times_Opened: str
     Top_Websites: str
     Top_Apps: str
+    Location: str = "Unknown Location"
+    Last_Sync_Time: str = "N/A"
 
 # ----------------- INGESTION ENDPOINT -----------------
 @app.post("/api/track")
@@ -68,6 +70,8 @@ def track_activity(payload: ActivityPayload, db: Session = Depends(get_db)):
         existing_record.times_opened = payload.Times_Opened
         existing_record.top_websites = payload.Top_Websites
         existing_record.top_apps = payload.Top_Apps
+        existing_record.location = payload.Location
+        existing_record.last_sync_time = payload.Last_Sync_Time
         db.commit()
         return {"status": "success", "message": "Updated existing row in database!"}
     
@@ -86,7 +90,9 @@ def track_activity(payload: ActivityPayload, db: Session = Depends(get_db)):
             last_active=payload.Last_Active,
             times_opened=payload.Times_Opened,
             top_websites=payload.Top_Websites,
-            top_apps=payload.Top_Apps
+            top_apps=payload.Top_Apps,
+            location=payload.Location,
+            last_sync_time=payload.Last_Sync_Time
         )
         db.add(new_record)
         db.commit()
