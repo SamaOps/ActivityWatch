@@ -137,6 +137,54 @@ import re
 
 BACKEND_API_URL = "https://activitywatch-j5d5.onrender.com/api/track"
 
+def check_installer_updates():
+    try:
+        url = f"https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/installer_version.txt?t={time.time()}"
+        res = requests.get(url, timeout=10)
+        if res.status_code == 200:
+            new_version = res.text.strip()
+            
+            version_file = os.path.join(os.path.dirname(__file__), 'installer_version.txt')
+            current_version = ""
+            if os.path.exists(version_file):
+                with open(version_file, 'r') as f:
+                    current_version = f.read().strip()
+                    
+            if new_version != current_version and new_version != "":
+                print("New installer version found! Running remote installer...")
+                
+                system = platform.system()
+                if system == "Windows":
+                    installer_url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/install_windows.bat"
+                    ext = ".bat"
+                    cmd = ["cmd.exe", "/c"]
+                else:
+                    installer_url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/install_ubuntu_mac.sh"
+                    ext = ".sh"
+                    cmd = ["bash"]
+                
+                inst_res = requests.get(f"{installer_url}?t={time.time()}", timeout=30)
+                if inst_res.status_code == 200:
+                    script_path = os.path.join(os.path.dirname(__file__), f"update_installer{ext}")
+                    with open(script_path, 'w') as f:
+                        f.write(inst_res.text)
+                    
+                    if system != "Windows":
+                        os.chmod(script_path, 0o755)
+                        
+                    kwargs = {}
+                    if os.name == 'nt':
+                        kwargs['creationflags'] = 0x08000000
+                    subprocess.Popen(cmd + [script_path], **kwargs)
+                    
+                    with open(version_file, 'w') as f:
+                        f.write(new_version)
+                    
+                    # Exit immediately so the new installer can run cleanly without collision
+                    sys.exit(0)
+    except Exception:
+        pass
+
 def auto_update():
     try:
         # Fetch the master version of this script from GitHub, using a timestamp to bypass cache
@@ -145,6 +193,11 @@ def auto_update():
         if res.status_code == 200:
             new_code = res.text
             
+            # Validation: Ensure the downloaded code is actually our python script and not corrupted
+            if "def main():" not in new_code or "import requests" not in new_code:
+                print("Downloaded update is corrupted. Aborting update.")
+                return
+                
             with open(__file__, 'r') as f:
                 current_code = f.read()
                 
@@ -186,10 +239,25 @@ def get_serial_number():
                     return f.read().strip()
             return subprocess.check_output("sudo dmidecode -s system-serial-number", shell=True).decode().strip()
         elif system == "Darwin": # macOS
-            return subprocess.check_output("system_profiler SPHardwareDataType | grep Serial | awk '{print $4}'", shell=True).decode().strip()
+            mac_serial = subprocess.check_output("/usr/sbin/ioreg -l | /usr/bin/grep IOPlatformSerialNumber | /usr/bin/awk -F'\"' '{print $4}'", shell=True).decode().strip()
+            return mac_serial if mac_serial else "Unknown-Serial"
     except Exception as e:
         pass
     return "Unknown-Serial"
+
+def get_location():
+    try:
+        res = requests.get("http://ip-api.com/json", timeout=5)
+        if res.status_code == 200:
+            data = res.json()
+            city = data.get("city", "")
+            region = data.get("regionName", "")
+            country = data.get("country", "")
+            if city and country:
+                return f"{city}, {region}, {country}".strip(", ")
+    except Exception:
+        pass
+    return "Unknown Location"
 
 def format_duration(seconds):
     hours = int(seconds // 3600)
@@ -204,7 +272,7 @@ AW_URL = "http://localhost:5600/api/0/buckets"
 def get_daily_events(target_date):
     # Calculate local midnight for the target_date
     local_tz = datetime.now().astimezone().tzinfo
-    start_local = target_date.replace(hour=8, minute=0, second=0, microsecond=0, tzinfo=local_tz)
+    start_local = target_date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=local_tz)
     end_local = start_local + timedelta(days=1)
     
     # If the target date is today, limit the end time to right now
@@ -303,13 +371,33 @@ def get_daily_events(target_date):
         if off_time < 0:
             off_time = 0
                     
-        # 2. Calculate top apps from window bucket
+        # 2. Calculate top apps from window bucket (and provide robust fallback for times)
         if window_bucket:
             events_url = f"{AW_URL}/{window_bucket}/events?start={start_str}&end={end_str}"
             events = requests.get(events_url).json()
             for e in events:
                 app = e['data'].get('app', 'Unknown')
-                top_apps[app] = top_apps.get(app, 0) + e.get('duration', 0)
+                duration = e.get('duration', 0)
+                top_apps[app] = top_apps.get(app, 0) + duration
+                
+                # Robust Fallback: Track first and last active from Window events too
+                ts_str = e.get('timestamp')
+                if ts_str:
+                    clean_ts = ts_str.split('.')[0].replace('Z', '')
+                    try:
+                        event_utc = datetime.strptime(clean_ts, "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+                        event_time = event_utc.astimezone()
+                        if first_active is None or event_time < first_active:
+                            first_active = event_time
+                        end_time_val = event_time + timedelta(seconds=duration)
+                        if last_active is None or end_time_val > last_active:
+                            last_active = end_time_val
+                    except Exception:
+                        pass
+                        
+            # If the AFK watcher crashed (active time is still 0 but apps were opened), use window duration as fallback
+            if active_time == 0 and len(events) > 0:
+                active_time = sum([e.get('duration', 0) for e in events])
                 
         # 3. Calculate top websites from web bucket
         if web_bucket:
@@ -348,9 +436,42 @@ def get_daily_events(target_date):
         print(f"Error fetching AW data: {e}")
         return None
 
+def check_and_start_engines():
+    try:
+        res = requests.get("http://localhost:5600/api/0/info", timeout=2)
+        if res.status_code == 200:
+            return # Engines are running fine
+    except Exception:
+        pass
+        
+    print("ActivityWatch engines are dead (likely due to reboot). Restarting them...")
+    try:
+        if platform.system() == "Windows":
+            script = os.path.join(os.environ["USERPROFILE"], ".aw_tracker", "start_aw.vbs")
+            if os.path.exists(script):
+                subprocess.Popen(["wscript.exe", script], creationflags=0x08000000)
+        else:
+            script = os.path.expanduser("~/.aw_tracker/start_aw.sh")
+            if os.path.exists(script):
+                subprocess.Popen(["bash", script])
+        # Give engines a few seconds to fully spin up
+        time.sleep(5)
+    except Exception as e:
+        print(f"Failed to start engines: {e}")
+
 def main():
+    # Global Jitter: Wait up to 5 minutes before doing ANYTHING to prevent DDoS on GitHub/Render.
+    # We skip this if run interactively by a user in the terminal.
+    if not sys.stdout.isatty():
+        delay = random.randint(1, 300)
+        time.sleep(delay)
+
+    check_installer_updates()
     # Attempt to fetch and apply OTA updates before doing anything
     auto_update()
+    
+    # Watchdog: Ensure engines are actually running before we try to pull data
+    check_and_start_engines()
     
     print("Gathering data from ActivityWatch...")
     
@@ -394,7 +515,9 @@ def main():
             "Last_Active": aw_data["Last_Active"],
             "Times_Opened": aw_data["Times_Opened"],
             "Top_Websites": aw_data["Top_Websites"],
-            "Top_Apps": aw_data["Top_Apps"]
+            "Top_Apps": aw_data["Top_Apps"],
+            "Location": get_location(),
+            "Last_Sync_Time": datetime.now().strftime("%I:%M %p")
         }
         
         print("Preparing to send to Render Database...")
@@ -441,7 +564,14 @@ if [ "$(uname)" == "Darwin" ]; then
     <key>RunAtLoad</key>
     <true/>
     <key>StartInterval</key>
-    <integer>1800</integer>
+    <integer>10800</integer>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>23</integer>
+        <key>Minute</key>
+        <integer>59</integer>
+    </dict>
 </dict>
 </plist>
 EOF_PLIST
@@ -449,7 +579,7 @@ EOF_PLIST
 else
     echo "Setting up Linux crontab for auto-sync..."
     PYTHON_PATH=$(which python3)
-    (crontab -l 2>/dev/null; echo "*/30 * * * * $PYTHON_PATH $HOME/.aw_tracker/activity_tracker.py") | crontab -
+    (crontab -l 2>/dev/null; echo "0 */3 * * * $PYTHON_PATH $HOME/.aw_tracker/activity_tracker.py"; echo "59 23 * * * $PYTHON_PATH $HOME/.aw_tracker/activity_tracker.py") | crontab -
 fi
 
 echo "Installation Complete! Chrome extension and ActivityWatch are now running silently."

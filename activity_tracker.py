@@ -148,7 +148,7 @@ AW_URL = "http://localhost:5600/api/0/buckets"
 def get_daily_events(target_date):
     # Calculate local midnight for the target_date
     local_tz = datetime.now().astimezone().tzinfo
-    start_local = target_date.replace(hour=8, minute=0, second=0, microsecond=0, tzinfo=local_tz)
+    start_local = target_date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=local_tz)
     end_local = start_local + timedelta(days=1)
     
     # If the target date is today, limit the end time to right now
