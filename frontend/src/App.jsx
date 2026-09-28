@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Activity, Search, Clock, Laptop, Calendar, Filter, Download } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell, Legend, BarChart, Bar
 } from 'recharts';
 import { format, parse, isAfter, isBefore, isEqual } from 'date-fns';
 
@@ -140,11 +140,24 @@ function App() {
     // Group by Date for Area Chart
     const dateMap = {};
     const osCount = {};
+    const seenDevices = new Set();
+    const dayMap = { 'Monday': {a:0,c:0}, 'Tuesday': {a:0,c:0}, 'Wednesday': {a:0,c:0}, 'Thursday': {a:0,c:0}, 'Friday': {a:0,c:0}, 'Saturday': {a:0,c:0}, 'Sunday': {a:0,c:0} };
+    
+    let totalUnlocks = 0;
+    let totalOffMins = 0;
 
     filteredData.forEach(item => {
       const activeMins = parseTimeStr(item.total_active_time);
       const afkMins = parseTimeStr(item.afk_time);
       const offMins = parseTimeStr(item.off_time);
+      
+      totalUnlocks += parseInt(item.times_opened) || 0;
+      totalOffMins += offMins;
+      
+      if (item.day_of_week && dayMap[item.day_of_week]) {
+         dayMap[item.day_of_week].a += activeMins;
+         dayMap[item.day_of_week].c += 1;
+      }
 
       if (!dateMap[item.date]) {
         dateMap[item.date] = { name: item.date, active: 0, afk: 0, off: 0, count: 0 };
@@ -154,7 +167,10 @@ function App() {
       dateMap[item.date].off += offMins;
       dateMap[item.date].count += 1;
 
-      osCount[item.os] = (osCount[item.os] || 0) + 1;
+      if (!seenDevices.has(item.serial_no)) {
+        seenDevices.add(item.serial_no);
+        osCount[item.os] = (osCount[item.os] || 0) + 1;
+      }
     });
 
     const cData = Object.values(dateMap).map(d => ({
@@ -168,7 +184,17 @@ function App() {
       value: osCount[os]
     }));
 
-    return { chartData: cData, osData: oData };
+    const dData = Object.keys(dayMap).map(d => ({
+      name: d.substring(0,3),
+      'Avg Active Mins': dayMap[d].c > 0 ? Math.round(dayMap[d].a / dayMap[d].c) : 0
+    }));
+    
+    const stats = {
+      avgUnlocks: filteredData.length > 0 ? Math.round(totalUnlocks / filteredData.length) : 0,
+      avgOffTimeMins: filteredData.length > 0 ? Math.round(totalOffMins / filteredData.length) : 0
+    };
+
+    return { chartData: cData, osData: oData, dayData: dData, stats };
   }, [filteredData]);
 
   if (loading) {
@@ -227,6 +253,18 @@ function App() {
               : '0h 0m'}
           </div>
         </div>
+        <div className="stat-card">
+          <div className="stat-title">Avg Off Time</div>
+          <div className="stat-value" style={{ color: '#94a3b8' }}>
+            {`${Math.floor(stats.avgOffTimeMins / 60)}h ${stats.avgOffTimeMins % 60}m`}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-title">Avg Daily Unlocks</div>
+          <div className="stat-value" style={{ color: '#38bdf8' }}>
+            {stats.avgUnlocks}
+          </div>
+        </div>
       </div>
 
       <div className="charts-grid">
@@ -279,6 +317,22 @@ function App() {
               <RechartsTooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }} />
               <Legend />
             </PieChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className="chart-card chart-large" style={{ marginTop: '1rem' }}>
+          <h3 className="chart-title">Activity by Day of Week (Avg Active Mins)</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={dayData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} />
+              <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+              <RechartsTooltip 
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }}
+                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+              />
+              <Bar dataKey="Avg Active Mins" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
