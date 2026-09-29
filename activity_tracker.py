@@ -361,7 +361,7 @@ def main():
                 last_sync_str = f.read().strip()
                 last_sync = datetime.strptime(last_sync_str, "%Y-%m-%d")
                 if (today - last_sync).days > 0:
-                    start_date = last_sync + timedelta(days=1)
+                    start_date = last_sync
         except Exception:
             pass
             
