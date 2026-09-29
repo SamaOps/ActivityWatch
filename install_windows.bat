@@ -17,7 +17,7 @@ if not exist "%USERPROFILE%\.aw_tracker\activitywatch\aw-server\aw-server.exe" (
 
 :: Create a VBScript to run trackers completely invisibly (no black windows)
 echo Set WshShell = CreateObject("WScript.Shell") > "%USERPROFILE%\.aw_tracker\start_aw.vbs"
-echo WshShell.Run chr(34) ^& "%USERPROFILE%\.aw_tracker\activitywatch\aw-server\aw-server.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
+echo WshShell.Run chr(34) ^& "%USERPROFILE%\.aw_tracker\activitywatch\aw-server-rust\aw-server-rust.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 echo WshShell.Run chr(34) ^& "%USERPROFILE%\.aw_tracker\activitywatch\aw-watcher-afk\aw-watcher-afk.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 echo WshShell.Run chr(34) ^& "%USERPROFILE%\.aw_tracker\activitywatch\aw-watcher-window\aw-watcher-window.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 echo Set WshShell = Nothing >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
