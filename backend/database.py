@@ -5,9 +5,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# We use SQLite by default for easy local testing so you don't have to install PostgreSQL immediately.
-# When you are ready for production, just add POSTGRES_URL=postgresql://user:pass@host/db to a .env file!
-DATABASE_URL = os.getenv("POSTGRES_URL", "sqlite:///./activitywatch.db")
+# Production AWS PostgreSQL Database
+PROD_DB = "postgresql+psycopg://activity_watch:ActivityWatch*898&8@db-pg.cosodeda78lq.ap-south-1.rds.amazonaws.com:5432/activity_watch"
+DATABASE_URL = os.getenv("POSTGRES_URL", PROD_DB)
 
 engine = create_engine(
     DATABASE_URL, 
