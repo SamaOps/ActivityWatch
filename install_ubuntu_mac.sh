@@ -528,7 +528,7 @@ def main():
             time.sleep(delay)
             
             headers = {"X-API-KEY": "aw-v2-enterprise-secret-key"}
-            res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=30, allow_redirects=False)
+            res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=90, allow_redirects=False)
             if res.status_code in [200, 302, 303, 404]:
                 print(f"✅ Successfully sent data for {current_date.strftime('%Y-%m-%d')}!")
                 # Save sync success for this date
