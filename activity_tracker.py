@@ -396,7 +396,7 @@ def main():
             "Last_Sync_Time": datetime.now().strftime("%m/%d/%Y %I:%M %p")
         }
         
-        print("Preparing to send to AWS EC2 Database...")
+        print("Preparing to send to AWS rds Database...")
         try:
             # Jitter: wait a random time between 1 and 300 seconds (5 minutes) to prevent 20,000 laptops from hitting the server at the exact same second
             delay = random.randint(1, 300)
