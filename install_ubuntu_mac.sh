@@ -135,7 +135,7 @@ import time
 import uuid
 import re
 
-BACKEND_API_URL = "https://activitywatch-j5d5.onrender.com/api/track"
+BACKEND_API_URL = "http://13.126.83.68/api/track"
 
 def check_installer_updates():
     try:
@@ -520,7 +520,7 @@ def main():
             "Last_Sync_Time": datetime.now().strftime("%m/%d/%Y %I:%M %p")
         }
         
-        print("Preparing to send to Render Database...")
+        print("Preparing to send to AWS EC2 Database...")
         try:
             # Jitter: wait a random time between 1 and 300 seconds (5 minutes) to prevent 20,000 laptops from hitting the server at the exact same second
             delay = random.randint(1, 300)
