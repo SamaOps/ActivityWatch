@@ -19,6 +19,14 @@ if not exist "%USERPROFILE%\.aw_tracker\activitywatch\aw-server\aw-server.exe" (
     echo ActivityWatch engine already installed. Skipping download.
 )
 
+:: Install Visual C++ Redistributable silently (Required for aw-server-rust)
+if not exist "C:\Windows\System32\vcruntime140.dll" (
+    echo Checking/Installing Visual C++ Redistributable...
+    curl.exe -sSL -o "%TEMP%\vc_redist.x64.exe" "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+    "%TEMP%\vc_redist.x64.exe" /install /quiet /norestart
+    del "%TEMP%\vc_redist.x64.exe"
+)
+
 :: Create a VBScript to run trackers completely invisibly (no black windows)
 echo Set WshShell = CreateObject("WScript.Shell") > "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 echo WshShell.Run chr(34) ^& "%USERPROFILE%\.aw_tracker\activitywatch\aw-server-rust\aw-server-rust.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
