@@ -365,9 +365,9 @@ def main():
         except Exception:
             pass
             
-    # Cap historical sync to last 14 days to avoid overloading
-    if (today - start_date).days > 14:
-        start_date = today - timedelta(days=14)
+    # Cap historical sync to last 30 days to avoid overloading
+    if (today - start_date).days > 30:
+        start_date = today - timedelta(days=30)
         
     current_date = start_date
     while current_date.date() <= today.date():
