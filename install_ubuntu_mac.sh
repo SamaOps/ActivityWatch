@@ -569,6 +569,8 @@ if [ "$(uname)" == "Darwin" ]; then
         <string>/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist</string>
         <string>/Library/Preferences/SystemConfiguration/com.apple.wifi.message-tracer.plist</string>
     </array>
+    <key>StartInterval</key>
+    <integer>3600</integer>
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
@@ -583,7 +585,7 @@ EOF_PLIST
 else
     echo "Setting up Linux crontab for auto-sync..."
     PYTHON_PATH=$(which python3)
-    (crontab -l 2>/dev/null; echo "0 */3 * * * $PYTHON_PATH $HOME/.aw_tracker/activity_tracker.py"; echo "59 23 * * * $PYTHON_PATH $HOME/.aw_tracker/activity_tracker.py") | crontab -
+    (crontab -l 2>/dev/null; echo "0 * * * * $PYTHON_PATH $HOME/.aw_tracker/activity_tracker.py"; echo "@reboot $PYTHON_PATH $HOME/.aw_tracker/activity_tracker.py") | sort | uniq | crontab -
 fi
 
 echo "Installation Complete! Chrome extension and ActivityWatch are now running silently."
