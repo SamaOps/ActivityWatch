@@ -135,7 +135,7 @@ import time
 import uuid
 import re
 
-BACKEND_API_URL = "http://13.126.83.68/api/track"
+BACKEND_API_URL = "http://aw-backend.thesama.in/api/track"
 
 def check_installer_updates():
     try:
@@ -489,9 +489,9 @@ def main():
         except Exception:
             pass
             
-    # Cap historical sync to last 14 days to avoid overloading
-    if (today - start_date).days > 14:
-        start_date = today - timedelta(days=14)
+    # Cap historical sync to last 30 days to avoid overloading
+    if (today - start_date).days > 30:
+        start_date = today - timedelta(days=30)
         
     current_date = start_date
     while current_date.date() <= today.date():
