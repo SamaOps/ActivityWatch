@@ -11,7 +11,7 @@ import time
 import uuid
 import re
 
-BACKEND_API_URL = "http://aw-backend.thesama.in/api/track"
+BACKEND_API_URL = "https://aw-backend.thesama.in/api/track"
 
 def check_installer_updates():
     try:
