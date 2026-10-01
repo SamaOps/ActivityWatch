@@ -400,8 +400,28 @@ def get_daily_events(target_date):
             events = requests.get(events_url).json()
             for e in events:
                 url = e['data'].get('url', '')
+                duration = e.get('duration', 0)
                 if url:
-                    top_websites[url] = top_websites.get(url, 0) + e.get('duration', 0)
+                    top_websites[url] = top_websites.get(url, 0) + duration
+                    
+                # Ultimate Fallback: Track first and last active from Web events too if others crashed
+                ts_str = e.get('timestamp')
+                if ts_str:
+                    clean_ts = ts_str.split('.')[0].replace('Z', '')
+                    try:
+                        event_utc = datetime.strptime(clean_ts, "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+                        event_time = event_utc.astimezone()
+                        if first_active is None or event_time < first_active:
+                            first_active = event_time
+                        end_time_val = event_time + timedelta(seconds=duration)
+                        if last_active is None or end_time_val > last_active:
+                            last_active = end_time_val
+                    except Exception:
+                        pass
+            
+            # If BOTH AFK and Window watchers crashed (active time is still 0), use web duration
+            if active_time == 0 and len(events) > 0:
+                active_time = sum([e.get('duration', 0) for e in events])
                     
         # Off time is the "gaps" between First Active and Last Active (calculated after fallbacks)
         off_time = total_period_seconds - (active_time + afk_time)
