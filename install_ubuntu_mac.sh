@@ -584,6 +584,8 @@ if [ "$(uname)" == "Darwin" ]; then
     </array>
     <key>RunAtLoad</key>
     <true/>
+    <key>AbandonProcessGroup</key>
+    <true/>
     <key>WatchPaths</key>
     <array>
         <string>/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist</string>
