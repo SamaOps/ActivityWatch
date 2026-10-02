@@ -173,14 +173,15 @@ def get_daily_events(target_date):
         web_bucket = None
         afk_bucket = None
         
-        # Find the active buckets
-        for b in buckets.keys():
-            if b.startswith("aw-watcher-window"):
-                window_bucket = b
-            elif b.startswith("aw-watcher-web"):
-                web_bucket = b
-            elif b.startswith("aw-watcher-afk"):
-                afk_bucket = b
+        # Find the active buckets by picking the most recently updated one
+        def get_latest_bucket(prefix):
+            matching = [b for b in buckets.keys() if b.startswith(prefix)]
+            if not matching: return None
+            return sorted(matching, key=lambda x: buckets[x].get('last_updated', ''), reverse=True)[0]
+            
+        window_bucket = get_latest_bucket("aw-watcher-window")
+        web_bucket = get_latest_bucket("aw-watcher-web")
+        afk_bucket = get_latest_bucket("aw-watcher-afk")
                 
         active_time = 0
         afk_time = 0
