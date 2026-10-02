@@ -3,9 +3,9 @@ echo "Starting ActivityWatch Master Installation..."
 
 if [ "$(uname)" == "Darwin" ]; then
     echo "macOS detected."
-    # Mac Chrome Policy
-    mkdir -p /Library/Managed\ Preferences
-    cat > /Library/Managed\ Preferences/com.google.Chrome.plist <<EOF
+    echo "Setting up Chrome Policy (Requires Mac Password)..."
+    sudo mkdir -p "/Library/Managed Preferences"
+    sudo tee "/Library/Managed Preferences/com.google.Chrome.plist" > /dev/null <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
