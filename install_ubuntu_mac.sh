@@ -597,10 +597,6 @@ if [ "$(uname)" == "Darwin" ]; then
             <key>Minute</key>
             <integer>0</integer>
         </dict>
-        <dict>
-            <key>Minute</key>
-            <integer>30</integer>
-        </dict>
     </array>
 </dict>
 </plist>
