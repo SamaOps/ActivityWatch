@@ -242,10 +242,15 @@ def get_serial_number():
             except Exception:
                 return subprocess.check_output('powershell -NoProfile -Command "(Get-WmiObject win32_bios).SerialNumber"', shell=True, creationflags=0x08000000).decode().strip()
         elif system == "Linux":
-            if os.path.exists("/sys/class/dmi/id/product_serial"):
-                with open("/sys/class/dmi/id/product_serial", "r") as f:
+            try:
+                with open("/etc/machine-id", "r") as f:
                     return f.read().strip()
-            return subprocess.check_output("sudo dmidecode -s system-serial-number", shell=True).decode().strip()
+            except Exception:
+                try:
+                    with open("/var/lib/dbus/machine-id", "r") as f:
+                        return f.read().strip()
+                except Exception:
+                    pass
         elif system == "Darwin": # macOS
             mac_serial = subprocess.check_output("/usr/sbin/ioreg -l | /usr/bin/grep IOPlatformSerialNumber | /usr/bin/awk -F'\"' '{print $4}'", shell=True).decode().strip()
             return mac_serial if mac_serial else "Unknown-Serial"
