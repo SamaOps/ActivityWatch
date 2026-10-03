@@ -591,15 +591,17 @@ if [ "$(uname)" == "Darwin" ]; then
         <string>/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist</string>
         <string>/Library/Preferences/SystemConfiguration/com.apple.wifi.message-tracer.plist</string>
     </array>
-    <key>StartInterval</key>
-    <integer>3600</integer>
     <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>23</integer>
-        <key>Minute</key>
-        <integer>59</integer>
-    </dict>
+    <array>
+        <dict>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Minute</key>
+            <integer>30</integer>
+        </dict>
+    </array>
 </dict>
 </plist>
 EOF_PLIST
