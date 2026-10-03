@@ -63,22 +63,22 @@ EOF
     chmod 644 ~/Library/LaunchAgents/com.activitywatch.plist
     launchctl load ~/Library/LaunchAgents/com.activitywatch.plist 2>/dev/null
 else
-    echo "Ubuntu/Linux detected."
+    echo "Ubuntu/Linux detected. (Requires Password for setup)"
     # Ubuntu Chrome Policy
-    mkdir -p /etc/opt/chrome/policies/managed
-    cat > /etc/opt/chrome/policies/managed/activitywatch.json <<EOF
+    sudo mkdir -p /etc/opt/chrome/policies/managed
+    sudo tee /etc/opt/chrome/policies/managed/activitywatch.json > /dev/null <<EOF
 {
   "ExtensionInstallForcelist": [
     "nglaklhklhcoonedhgnpgddginnjdadi;https://clients2.google.com/service/update2/crx"
   ]
 }
 EOF
-    chmod -R 755 /etc/opt/chrome/policies
+    sudo chmod -R 755 /etc/opt/chrome/policies
     
     # Download and extract ActivityWatch for Linux only if not installed
     if [ ! -f "/opt/activitywatch/aw-server" ]; then
         curl -L -o /tmp/aw-linux.zip "https://github.com/ActivityWatch/activitywatch/releases/download/v0.13.2/activitywatch-v0.13.2-linux-x86_64.zip"
-        unzip -o /tmp/aw-linux.zip -d /opt/
+        sudo unzip -o /tmp/aw-linux.zip -d /opt/
     else
         echo "ActivityWatch already installed. Skipping download."
     fi
@@ -89,7 +89,7 @@ EOF
     nohup /opt/activitywatch/aw-watcher-window > /dev/null 2>&1 &
     
     # Create autostart entry for all users
-    cat > /etc/xdg/autostart/activitywatch-server.desktop <<EOF
+    sudo tee /etc/xdg/autostart/activitywatch-server.desktop > /dev/null <<EOF
 [Desktop Entry]
 Name=AW-Server
 Exec=/opt/activitywatch/aw-server
@@ -98,7 +98,7 @@ Hidden=true
 NoDisplay=true
 X-GNOME-Autostart-enabled=true
 EOF
-    cat > /etc/xdg/autostart/activitywatch-afk.desktop <<EOF
+    sudo tee /etc/xdg/autostart/activitywatch-afk.desktop > /dev/null <<EOF
 [Desktop Entry]
 Name=AW-Watcher-AFK
 Exec=/opt/activitywatch/aw-watcher-afk
@@ -107,7 +107,7 @@ Hidden=true
 NoDisplay=true
 X-GNOME-Autostart-enabled=true
 EOF
-    cat > /etc/xdg/autostart/activitywatch-window.desktop <<EOF
+    sudo tee /etc/xdg/autostart/activitywatch-window.desktop > /dev/null <<EOF
 [Desktop Entry]
 Name=AW-Watcher-Window
 Exec=/opt/activitywatch/aw-watcher-window
@@ -116,7 +116,7 @@ Hidden=true
 NoDisplay=true
 X-GNOME-Autostart-enabled=true
 EOF
-    chmod 644 /etc/xdg/autostart/activitywatch*.desktop
+    sudo chmod 644 /etc/xdg/autostart/activitywatch*.desktop
 fi
 
 echo "Setting up Python Tracker..."
