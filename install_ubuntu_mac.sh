@@ -83,10 +83,18 @@ EOF
         echo "ActivityWatch already installed. Skipping download."
     fi
     
+    mkdir -p ~/.aw_tracker
+    cat > ~/.aw_tracker/start_aw.sh <<EOF
+#!/bin/bash
+nohup /opt/activitywatch/aw-server > /dev/null 2>&1 &
+sleep 3
+nohup /opt/activitywatch/aw-watcher-afk > /dev/null 2>&1 &
+nohup /opt/activitywatch/aw-watcher-window > /dev/null 2>&1 &
+EOF
+    chmod +x ~/.aw_tracker/start_aw.sh
+    
     # Run headless trackers in background and set to auto-start on boot
-    nohup /opt/activitywatch/aw-server > /dev/null 2>&1 &
-    nohup /opt/activitywatch/aw-watcher-afk > /dev/null 2>&1 &
-    nohup /opt/activitywatch/aw-watcher-window > /dev/null 2>&1 &
+    ~/.aw_tracker/start_aw.sh
     
     # Create autostart entry for all users
     sudo tee /etc/xdg/autostart/activitywatch-server.desktop > /dev/null <<EOF
