@@ -86,10 +86,10 @@ EOF
     mkdir -p ~/.aw_tracker
     cat > ~/.aw_tracker/start_aw.sh <<EOF
 #!/bin/bash
-nohup /opt/activitywatch/aw-server > /dev/null 2>&1 &
+nohup /opt/activitywatch/aw-server/aw-server > /dev/null 2>&1 &
 sleep 3
-nohup /opt/activitywatch/aw-watcher-afk > /dev/null 2>&1 &
-nohup /opt/activitywatch/aw-watcher-window > /dev/null 2>&1 &
+nohup /opt/activitywatch/aw-watcher-afk/aw-watcher-afk > /dev/null 2>&1 &
+nohup /opt/activitywatch/aw-watcher-window/aw-watcher-window > /dev/null 2>&1 &
 EOF
     chmod +x ~/.aw_tracker/start_aw.sh
     
@@ -100,7 +100,7 @@ EOF
     sudo tee /etc/xdg/autostart/activitywatch-server.desktop > /dev/null <<EOF
 [Desktop Entry]
 Name=AW-Server
-Exec=/opt/activitywatch/aw-server
+Exec=/opt/activitywatch/aw-server/aw-server
 Type=Application
 Hidden=true
 NoDisplay=true
@@ -109,7 +109,7 @@ EOF
     sudo tee /etc/xdg/autostart/activitywatch-afk.desktop > /dev/null <<EOF
 [Desktop Entry]
 Name=AW-Watcher-AFK
-Exec=/opt/activitywatch/aw-watcher-afk
+Exec=/opt/activitywatch/aw-watcher-afk/aw-watcher-afk
 Type=Application
 Hidden=true
 NoDisplay=true
@@ -118,7 +118,7 @@ EOF
     sudo tee /etc/xdg/autostart/activitywatch-window.desktop > /dev/null <<EOF
 [Desktop Entry]
 Name=AW-Watcher-Window
-Exec=/opt/activitywatch/aw-watcher-window
+Exec=/opt/activitywatch/aw-watcher-window/aw-watcher-window
 Type=Application
 Hidden=true
 NoDisplay=true
