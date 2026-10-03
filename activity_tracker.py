@@ -247,8 +247,12 @@ def get_daily_events(target_date):
         if window_bucket:
             events_url = f"{AW_URL}/{window_bucket}/events?start={start_str}&end={end_str}"
             events = requests.get(events_url).json()
+            inactive_apps = ['loginwindow', 'screensaverengine', 'window server', 'lockapp.exe', 'logonui.exe', 'idle']
             for e in events:
                 app = e['data'].get('app', 'Unknown')
+                if app.lower() in inactive_apps:
+                    continue
+                    
                 duration = e.get('duration', 0)
                 top_apps[app] = top_apps.get(app, 0) + duration
                 
@@ -268,8 +272,8 @@ def get_daily_events(target_date):
                         pass
                         
             # If the AFK watcher crashed (active time is still 0 but apps were opened), use window duration as fallback
-            if active_time == 0 and len(events) > 0:
-                active_time = sum([e.get('duration', 0) for e in events])
+            if active_time == 0 and len(top_apps) > 0:
+                active_time = sum(top_apps.values())
                 
         # 3. Calculate top websites from web bucket
         if web_bucket:
@@ -419,11 +423,6 @@ def main():
         
         print("Preparing to send to AWS rds Database...")
         try:
-            # Jitter: wait a random time between 1 and 300 seconds (5 minutes) to prevent 20,000 laptops from hitting the server at the exact same second
-            delay = random.randint(1, 300)
-            print(f"Jitter: Waiting {delay} seconds before sending...")
-            time.sleep(delay)
-            
             headers = {"X-API-KEY": "aw-v2-enterprise-secret-key"}
             res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=90, allow_redirects=False)
             if res.status_code in [200, 302, 303, 404]:
