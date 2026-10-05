@@ -53,11 +53,11 @@ curl.exe -sSL -o "%USERPROFILE%\.aw_tracker\activity_tracker.py" "https://raw.gi
 :: Install Python silently if missing
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Python not found. Installing Python 3.11 silently (this may take a minute)...
+    echo Python not found. Installing Python 3.11 silently ^(this may take a minute^)...
     curl.exe -sSL -o "%TEMP%\python_installer.exe" "https://www.python.org/ftp/python/3.11.8/python-3.11.8-amd64.exe"
     "%TEMP%\python_installer.exe" /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 Include_doc=0
     del "%TEMP%\python_installer.exe"
-    :: Give Windows a moment to register the new PATH variables
+    REM Give Windows a moment to register the new PATH variables
     timeout /t 3 /nobreak >nul
 )
 
