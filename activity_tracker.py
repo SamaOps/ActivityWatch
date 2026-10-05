@@ -365,12 +365,25 @@ def check_and_start_engines():
     except Exception as e:
         print(f"Failed to start engines: {e}")
 
+def wait_for_internet(timeout=300):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            socket.create_connection(("1.1.1.1", 53), timeout=3)
+            return True
+        except OSError:
+            time.sleep(5)
+    return False
+
 def main():
     # Global Jitter: Wait up to 5 minutes before doing ANYTHING to prevent DDoS on GitHub/Render.
     # We skip this if run interactively by a user in the terminal.
     if not sys.stdout.isatty():
         delay = random.randint(1, 300)
         time.sleep(delay)
+
+    # Block until internet is fully connected (solves the Wi-Fi race condition on wake)
+    wait_for_internet(300)
 
     check_installer_updates()
     # Attempt to fetch and apply OTA updates before doing anything
