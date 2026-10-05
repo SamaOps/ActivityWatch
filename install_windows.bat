@@ -50,8 +50,21 @@ echo Setting up Python Tracker...
 mkdir "%USERPROFILE%\.aw_tracker" 2>nul
 curl.exe -sSL -o "%USERPROFILE%\.aw_tracker\activity_tracker.py" "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/activity_tracker.py"
 
-:: Schedule the python script to run silently every 30 minutes, even on battery power
+:: Install Python silently if missing
+python --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo Python not found. Installing Python 3.11 silently (this may take a minute)...
+    curl.exe -sSL -o "%TEMP%\python_installer.exe" "https://www.python.org/ftp/python/3.11.8/python-3.11.8-amd64.exe"
+    "%TEMP%\python_installer.exe" /quiet InstallAllUsers=1 PrependPath=1 Include_test=0 Include_doc=0
+    del "%TEMP%\python_installer.exe"
+    :: Give Windows a moment to register the new PATH variables
+    timeout /t 3 /nobreak >nul
+)
+
+:: Schedule the python script to run silently every hour, even on battery power
 echo CreateObject("WScript.Shell").Run "pythonw """ ^& "%USERPROFILE%\.aw_tracker\activity_tracker.py" ^& """", 0, False > "%USERPROFILE%\.aw_tracker\run_hidden_task.vbs"
 powershell -Command "$action = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument '\"%USERPROFILE%\.aw_tracker\run_hidden_task.vbs\"'; $t1 = New-ScheduledTaskTrigger -AtLogOn; $t2 = New-ScheduledTaskTrigger -Once -At '00:00' -RepetitionInterval (New-TimeSpan -Hours 1) -RepetitionDuration (New-TimeSpan -Days 3650); $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -Hidden; Register-ScheduledTask -Action $action -Trigger @($t1, $t2) -Settings $settings -TaskName 'ActivityWatchTracker' -Force" >nul
 
 echo Installation Complete! Chrome extension and ActivityWatch are now running silently.
+echo Triggering first background sync (will execute within 0-5 minutes)...
+schtasks /run /tn "ActivityWatchTracker" >nul 2>&1

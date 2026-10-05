@@ -622,3 +622,5 @@ else
 fi
 
 echo "Installation Complete! Chrome extension and ActivityWatch are now running silently."
+echo "Triggering first background sync (will execute within 0-5 minutes)..."
+nohup $PYTHON_PATH $HOME/.aw_tracker/activity_tracker.py >/dev/null 2>&1 &
