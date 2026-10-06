@@ -61,6 +61,12 @@ if %errorlevel% neq 0 (
     timeout /t 3 /nobreak >nul
 )
 
+:: Ensure required Python libraries are installed
+python -m pip install requests >nul 2>&1
+if exist "C:\Program Files\Python311\python.exe" (
+    "C:\Program Files\Python311\python.exe" -m pip install requests >nul 2>&1
+)
+
 :: Schedule the python script to run silently every hour, even on battery power
 echo CreateObject("WScript.Shell").Run "pythonw """ ^& "%USERPROFILE%\.aw_tracker\activity_tracker.py" ^& """", 0, False > "%USERPROFILE%\.aw_tracker\run_hidden_task.vbs"
 powershell -Command "$action = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument '\"%USERPROFILE%\.aw_tracker\run_hidden_task.vbs\"'; $t1 = New-ScheduledTaskTrigger -AtLogOn; $t2 = New-ScheduledTaskTrigger -Once -At '00:00' -RepetitionInterval (New-TimeSpan -Hours 1) -RepetitionDuration (New-TimeSpan -Days 3650); $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -Hidden; Register-ScheduledTask -Action $action -Trigger @($t1, $t2) -Settings $settings -TaskName 'ActivityWatchTracker' -Force" >nul
