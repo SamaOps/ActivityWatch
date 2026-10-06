@@ -11,11 +11,11 @@ import time
 import uuid
 import re
 
-# In Windows pythonw, stdout and stderr are None. We must redirect them to devnull so print() doesn't crash the script.
+# In Windows pythonw, stdout and stderr are None. We dynamically redirect them to a log file to catch any future background errors.
 if sys.stdout is None:
-    sys.stdout = open(os.devnull, 'w')
+    sys.stdout = open(os.path.join(os.path.dirname(__file__), 'tracker.log'), 'a', encoding='utf-8')
 if sys.stderr is None:
-    sys.stderr = open(os.devnull, 'w')
+    sys.stderr = open(os.path.join(os.path.dirname(__file__), 'tracker_error.log'), 'a', encoding='utf-8')
 
 BACKEND_API_URL = "https://aw-backend.thesama.in/api/track"
 
