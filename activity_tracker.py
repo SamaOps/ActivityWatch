@@ -380,7 +380,8 @@ def wait_for_internet(timeout=300):
 def main():
     # Global Jitter: Wait up to 5 minutes before doing ANYTHING to prevent DDoS on GitHub/Render.
     # We skip this if run interactively by a user in the terminal.
-    if not sys.stdout.isatty():
+    is_interactive = getattr(sys, 'stdout', None) is not None and sys.stdout.isatty()
+    if not is_interactive:
         delay = random.randint(1, 300)
         time.sleep(delay)
 
