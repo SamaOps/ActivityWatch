@@ -369,9 +369,11 @@ def wait_for_internet(timeout=300):
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
-            socket.create_connection(("1.1.1.1", 53), timeout=3)
+            # Use standard HTTPS to a guaranteed unblocked site (Google) 
+            # instead of DNS (1.1.1.1:53) which schools often block.
+            requests.get("https://www.google.com", timeout=3)
             return True
-        except OSError:
+        except Exception:
             time.sleep(5)
     return False
 
