@@ -133,17 +133,55 @@ def get_serial_number():
     return "Unknown-Serial"
 
 def get_location():
+    cache_file = os.path.join(os.path.dirname(__file__), 'location_cache.txt')
+    # Check if we already fetched location today
     try:
-        res = requests.get("http://ip-api.com/json", timeout=5)
-        if res.status_code == 200:
-            data = res.json()
-            city = data.get("city", "")
-            region = data.get("regionName", "")
-            country = data.get("country", "")
-            if city and country:
-                return f"{city}, {region}, {country}".strip(", ")
+        if os.path.exists(cache_file):
+            mod_time = datetime.fromtimestamp(os.path.getmtime(cache_file))
+            if mod_time.date() == datetime.now().date():
+                with open(cache_file, 'r') as f:
+                    return f.read().strip()
     except Exception:
         pass
+
+    # Try multiple free APIs to bypass rate limits
+    apis = [
+        "http://ip-api.com/json",
+        "https://ipwhois.app/json/",
+        "https://ipapi.co/json/"
+    ]
+    
+    for api in apis:
+        try:
+            # Use appropriate User-Agent to avoid blocks
+            headers = {"User-Agent": "Mozilla/5.0"}
+            res = requests.get(api, headers=headers, timeout=5)
+            if res.status_code == 200:
+                data = res.json()
+                city = data.get("city", "")
+                region = data.get("regionName", "") or data.get("region", "")
+                country = data.get("country", "") or data.get("country_name", "")
+                
+                if city and country:
+                    loc = f"{city}, {region}, {country}".strip(", ")
+                    # Cache it for today
+                    try:
+                        with open(cache_file, 'w') as f:
+                            f.write(loc)
+                    except Exception:
+                        pass
+                    return loc
+        except Exception:
+            continue
+            
+    # If all fail, return cached value from yesterday if it exists
+    try:
+        if os.path.exists(cache_file):
+            with open(cache_file, 'r') as f:
+                return f.read().strip()
+    except Exception:
+        pass
+
     return "Unknown Location"
 
 def format_duration(seconds):
