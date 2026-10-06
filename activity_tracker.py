@@ -188,7 +188,8 @@ def get_daily_events(target_date):
         def get_latest_bucket(prefix):
             matching = [b for b in buckets.keys() if b.startswith(prefix)]
             if not matching: return None
-            return sorted(matching, key=lambda x: buckets[x].get('last_updated', ''), reverse=True)[0]
+            # Fresh installs return 'null' (None) for last_updated. We use 'or ""' to prevent sorting crashes.
+            return sorted(matching, key=lambda x: buckets[x].get('last_updated') or "", reverse=True)[0]
             
         window_bucket = get_latest_bucket("aw-watcher-window")
         web_bucket = get_latest_bucket("aw-watcher-web")
