@@ -11,6 +11,12 @@ import time
 import uuid
 import re
 
+# In Windows pythonw, stdout and stderr are None. We must redirect them to devnull so print() doesn't crash the script.
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, 'w')
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, 'w')
+
 BACKEND_API_URL = "https://aw-backend.thesama.in/api/track"
 
 def check_installer_updates():
