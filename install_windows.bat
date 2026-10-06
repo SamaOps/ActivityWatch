@@ -67,4 +67,11 @@ powershell -Command "$action = New-ScheduledTaskAction -Execute 'wscript.exe' -A
 
 echo Installation Complete! Chrome extension and ActivityWatch are now running silently.
 echo Triggering first background sync (will execute within 0-5 minutes)...
-schtasks /run /tn "ActivityWatchTracker" >nul 2>&1
+
+:: Task Scheduler might need a reboot to see the new Python PATH, so we forcefully launch the first sync using the absolute path!
+if exist "C:\Program Files\Python311\pythonw.exe" (
+    start "" /B "C:\Program Files\Python311\pythonw.exe" "%USERPROFILE%\.aw_tracker\activity_tracker.py"
+) else (
+    start "" /B pythonw "%USERPROFILE%\.aw_tracker\activity_tracker.py"
+)
+
