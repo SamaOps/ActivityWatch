@@ -356,6 +356,15 @@ def get_location():
 # Fetch data from ActivityWatch local server
 AW_URL = "http://localhost:5600/api/0/buckets"
 
+def format_duration(seconds):
+    if seconds < 60:
+        return f"{int(seconds)}s"
+    minutes = int(seconds // 60)
+    hours = int(minutes // 60)
+    if hours > 0:
+        return f"{hours}h {minutes % 60}m"
+    return f"{minutes}m"
+
 def get_daily_events(target_date):
     # Calculate local midnight for the target_date
     local_tz = datetime.now().astimezone().tzinfo
