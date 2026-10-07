@@ -11,10 +11,10 @@ This document serves as the official architectural reference for the ActivityWat
 **Concept:** The primary Python tracker (`activity_tracker.py`) contains a self-updating function `check_installer_updates()`. Upon execution, it bypasses strict GitHub API rate limits by querying a raw text file (`raw.githubusercontent.com/.../installer_version.txt`). If a newer version is detected, it automatically downloads and executes the latest OS-specific installer.
 **Technical Value:** This establishes a decentralized, self-healing deployment pipeline capable of bypassing school IP bans (which normally limit GitHub API to 60/hr). Any bug fixes or payload modifications pushed to the main repository are immediately propagated to all 20,000 devices upon their next execution cycle.
 
-### 2. Hourly Sync & Asynchronous "Catch-Up" Logic
-**Concept:** OS-level task schedulers (Windows Task Scheduler, macOS launchd, Linux cron) trigger the telemetry extraction every single hour (at the top of the hour).
+### 2. Dynamic Hourly Sync & Instant Network Triggers
+**Concept:** OS-level task schedulers (Windows Task Scheduler, macOS launchd, Linux cron) are configured to trigger the telemetry extraction dynamically based on usage (e.g., every 60 minutes relative to startup) rather than relying on strict clock-hour triggers.
 **Technical Value:** 
-- **Ideal State:** Devices consistently transmit hourly heartbeats, maintaining real-time data accuracy on the dashboard without relying on a single end-of-day sync.
+- **Instant Connection Sync:** Background agents actively monitor system configuration files (e.g. `com.apple.airport.preferences.plist`). When the device detects a new internet connection, the sync triggers instantly without waiting for the next hour interval.
 - **Offline State:** If a device is powered off or disconnected, the script safely catches up. Upon the next successful internet connection (verified via a firewall-proof HTTPS ping to Google), the script iterates chronologically from the last successful sync date to the current date, guaranteeing **zero data loss**.
 
 ### 3. Traffic Throttling via "Global Jitter"
