@@ -16,6 +16,19 @@ const parseList = (text) => {
   return text.split(', ');
 };
 
+const formatDuration = (val) => {
+  if (!val) return "0m";
+  // If it's legacy data like "1h 30m", return as is
+  if (val.includes('h') || val.includes('m')) return val;
+  // Parse new integer seconds
+  const seconds = parseInt(val, 10);
+  if (isNaN(seconds)) return val;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+};
+
 const ExpandableList = ({ items, renderItem }) => {
   const [expanded, setExpanded] = useState(false);
   
@@ -391,9 +404,9 @@ function App() {
                     </td>
                     <td style={{ whiteSpace: 'nowrap' }}>{row.first_active}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>{row.last_active}</td>
-                    <td style={{ color: 'var(--success)', fontWeight: 600, whiteSpace: 'nowrap' }}>{row.total_active_time}</td>
-                    <td style={{ color: '#fb923c', whiteSpace: 'nowrap' }}>{row.afk_time}</td>
-                    <td style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>{row.off_time}</td>
+                    <td style={{ color: 'var(--success)', fontWeight: 600, whiteSpace: 'nowrap' }}>{formatDuration(row.total_active_time)}</td>
+                    <td style={{ color: '#fb923c', whiteSpace: 'nowrap' }}>{formatDuration(row.afk_time)}</td>
+                    <td style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>{formatDuration(row.off_time)}</td>
                     <td style={{ textAlign: 'center' }}>{row.times_opened}</td>
                     <td style={{ verticalAlign: 'top', minWidth: '220px' }}>
                       <ExpandableList items={apps} />

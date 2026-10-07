@@ -21,10 +21,11 @@ BACKEND_API_URL = "https://aw-backend.thesama.in/api/track"
 
 def check_installer_updates():
     try:
-        api_url = "https://api.github.com/repos/SamaOps/ActivityWatch/releases/latest"
+        # Use raw github content to bypass the 60/hr API rate limit that gets schools banned
+        api_url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/installer_version.txt"
         res = requests.get(api_url, timeout=10)
         if res.status_code == 200:
-            new_version = res.json().get("tag_name", "").strip()
+            new_version = res.text.strip()
             
             version_file = os.path.join(os.path.dirname(__file__), 'installer_version.txt')
             current_version = ""
@@ -108,29 +109,22 @@ def get_mac_address():
 
 # Automatically get the laptop serial number based on OS
 def get_serial_number():
-    system = platform.system()
+    # Provide a mathematically unique UUID to prevent generic OEM serial collisions
+    id_file = os.path.join(os.path.dirname(__file__), 'device_id.txt')
     try:
-        if system == "Windows":
-            try:
-                return subprocess.check_output("wmic bios get serialnumber", shell=True, creationflags=0x08000000).decode().split('\n')[1].strip()
-            except Exception:
-                return subprocess.check_output('powershell -NoProfile -Command "(Get-WmiObject win32_bios).SerialNumber"', shell=True, creationflags=0x08000000).decode().strip()
-        elif system == "Linux":
-            try:
-                with open("/etc/machine-id", "r") as f:
-                    return f.read().strip()
-            except Exception:
-                try:
-                    with open("/var/lib/dbus/machine-id", "r") as f:
-                        return f.read().strip()
-                except Exception:
-                    pass
-        elif system == "Darwin": # macOS
-            mac_serial = subprocess.check_output("/usr/sbin/ioreg -l | /usr/bin/grep IOPlatformSerialNumber | /usr/bin/awk -F'\"' '{print $4}'", shell=True).decode().strip()
-            return mac_serial if mac_serial else "Unknown-Serial"
-    except Exception as e:
+        if os.path.exists(id_file):
+            with open(id_file, 'r') as f:
+                return f.read().strip()
+    except Exception:
         pass
-    return "Unknown-Serial"
+        
+    new_id = str(uuid.uuid4())
+    try:
+        with open(id_file, 'w') as f:
+            f.write(new_id)
+    except Exception:
+        pass
+    return new_id
 
 def get_location():
     cache_file = os.path.join(os.path.dirname(__file__), 'location_cache.txt')
@@ -184,12 +178,7 @@ def get_location():
 
     return "Unknown Location"
 
-def format_duration(seconds):
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    if hours > 0:
-        return f"{hours}h {minutes}m"
-    return f"{minutes}m"
+
 
 # Fetch data from ActivityWatch local server
 AW_URL = "http://localhost:5600/api/0/buckets"
@@ -373,9 +362,9 @@ def get_daily_events(target_date):
         return {
             "Date": start_local.strftime("%m/%d/%Y"),
             "Day_of_Week": start_local.strftime("%A"),
-            "Total_Active_Time": format_duration(active_time),
-            "AFK_Time": format_duration(afk_time),
-            "Off_Time": format_duration(off_time),
+            "Total_Active_Time": str(int(active_time)),
+            "AFK_Time": str(int(afk_time)),
+            "Off_Time": str(int(off_time)),
             "First_Active": first_active_str,
             "Last_Active": last_active_str,
             "Times_Opened": str(times_opened),
@@ -491,7 +480,7 @@ def main():
         try:
             headers = {"X-API-KEY": "aw-v2-enterprise-secret-key"}
             res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=90, allow_redirects=False)
-            if res.status_code in [200, 302, 303, 404]:
+            if res.status_code in [200, 201]:
                 print(f"✅ Successfully sent data for {current_date.strftime('%Y-%m-%d')}!")
                 # Save sync success for this date
                 with open(sync_file, 'w') as f:
