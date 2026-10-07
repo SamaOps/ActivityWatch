@@ -8,8 +8,8 @@ This document serves as the official architectural reference for the ActivityWat
 ## 🎯 Architectural Strategies & Implementation
 
 ### 1. The "OTA Updater" (Over-The-Air) Pattern
-**Concept:** The primary Python tracker (`activity_tracker.py`) contains a self-updating function `check_installer_updates()`. Upon execution, it queries the official GitHub Releases API (`api.github.com/.../releases/latest`) to check the `tag_name`. If a newer version is detected, it automatically downloads and executes the latest OS-specific installer (`install_windows.bat` or `install_ubuntu_mac.sh`), which in turn updates the tracker.
-**Technical Value:** This establishes a decentralized, self-healing deployment pipeline. Any bug fixes, feature additions (e.g., Geolocation tracking), or payload modifications pushed to the main repository are immediately propagated to all 20,000 devices upon their next execution cycle, completely eliminating the need for endpoint management software (MDM) redeployments.
+**Concept:** The primary Python tracker (`activity_tracker.py`) contains a self-updating function `check_installer_updates()`. Upon execution, it bypasses strict GitHub API rate limits by querying a raw text file (`raw.githubusercontent.com/.../installer_version.txt`). If a newer version is detected, it automatically downloads and executes the latest OS-specific installer.
+**Technical Value:** This establishes a decentralized, self-healing deployment pipeline capable of bypassing school IP bans (which normally limit GitHub API to 60/hr). Any bug fixes or payload modifications pushed to the main repository are immediately propagated to all 20,000 devices upon their next execution cycle.
 
 ### 2. Hourly Sync & Asynchronous "Catch-Up" Logic
 **Concept:** OS-level task schedulers (Windows Task Scheduler, macOS launchd, Linux cron) trigger the telemetry extraction every single hour (at the top of the hour).
@@ -28,6 +28,13 @@ This document serves as the official architectural reference for the ActivityWat
 ### 5. Invisible Execution & Dynamic Logging ("Black Box")
 **Concept:** The script runs completely invisibly using `pythonw.exe` on Windows. All standard output and errors are dynamically caught and redirected to local hidden text files (`tracker.log` and `tracker_error.log`).
 **Technical Value:** Without a terminal window, standard `print()` statements cause fatal Python crashes. The dynamic logging system prevents these silent crashes and serves as a local "Black Box" flight recorder, allowing RMS admins to instantly diagnose any endpoint failures directly from the hard drive.
+
+### 6. Enterprise Data Integrity Protocols
+**Concept:** The system utilizes multiple hard-coded safeguards to maintain database integrity across 20k+ endpoints.
+**Technical Value:**
+- **UUID Fingerprinting:** Instead of relying on unreliable Windows `wmic` OEM serials (which cause database collisions), the script mathematically generates and saves a permanent UUID (`device_id.txt`) upon first execution.
+- **Integer Payloads:** Telemetry durations are sent as pure integers (e.g., `5400`) rather than strings (`"1h 30m"`). This allows the AWS PostgreSQL database to dynamically sum and sort millions of rows instantly, while the React frontend seamlessly renders the integers back into human-readable text.
+- **Network Failure Safeguard:** Server errors (like `404 Not Found`) explicitly fail the sync process, ensuring the laptop retains its local data and retries tomorrow, rather than assuming success and deleting the data.
 
 ---
 
