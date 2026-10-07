@@ -19,6 +19,35 @@ if sys.stderr is None:
 
 BACKEND_API_URL = "https://aw-backend.thesama.in/api/track"
 
+# Prevent double-execution if a sync takes longer than the scheduler interval
+LOCK_FILE = os.path.join(os.path.dirname(__file__), 'sync.lock')
+if os.path.exists(LOCK_FILE):
+    try:
+        # If lock is older than 2 hours (crashed run), clear it. Otherwise, exit.
+        if time.time() - os.path.getmtime(LOCK_FILE) > 7200:
+            os.remove(LOCK_FILE)
+        else:
+            print("Another instance is currently running. Exiting.")
+            sys.exit(0)
+    except Exception:
+        sys.exit(0)
+
+try:
+    with open(LOCK_FILE, 'w') as f:
+        f.write(str(os.getpid()))
+except Exception:
+    pass
+
+def cleanup_lock():
+    try:
+        if os.path.exists(LOCK_FILE):
+            os.remove(LOCK_FILE)
+    except Exception:
+        pass
+        
+import atexit
+atexit.register(cleanup_lock)
+
 def check_installer_updates():
     try:
         # Use raw github content to bypass the 60/hr API rate limit that gets schools banned
@@ -86,9 +115,21 @@ def auto_update():
                 
             # If the GitHub code is different, update the local file and restart
             if new_code.strip() != current_code.strip():
-                print("New version found! Updating and restarting...")
-                with open(__file__, 'w') as f:
+                print("New version found! Running safe compilation test...")
+                temp_file = os.path.join(os.path.dirname(__file__), 'update_temp.py')
+                with open(temp_file, 'w') as f:
                     f.write(new_code)
+                
+                # Verify syntax before applying (Bricked Laptop Safeguard)
+                try:
+                    compile(new_code, 'update_temp.py', 'exec')
+                except SyntaxError:
+                    print("Downloaded update contains syntax errors. Aborting to protect tracker.")
+                    os.remove(temp_file)
+                    return
+                
+                # Replace current file safely
+                os.replace(temp_file, __file__)
                 
                 kwargs = {}
                 if os.name == 'nt':
@@ -483,6 +524,11 @@ def main():
             if res.status_code in [200, 201]:
                 print(f"✅ Successfully sent data for {current_date.strftime('%Y-%m-%d')}!")
                 # Save sync success for this date
+                with open(sync_file, 'w') as f:
+                    f.write(current_date.strftime("%Y-%m-%d"))
+            elif res.status_code >= 400 and res.status_code < 500 and res.status_code != 429:
+                print(f"⚠️ Unrecoverable Client Error ({res.status_code}). Skipping day to prevent infinite loop.")
+                # Mark as synced so we don't get permanently stuck
                 with open(sync_file, 'w') as f:
                     f.write(current_date.strftime("%Y-%m-%d"))
             else:
