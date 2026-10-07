@@ -11,19 +11,23 @@ This document serves as the official architectural reference for the ActivityWat
 **Concept:** The primary Python tracker (`activity_tracker.py`) contains a self-updating function `check_installer_updates()`. Upon execution, it queries the official GitHub Releases API (`api.github.com/.../releases/latest`) to check the `tag_name`. If a newer version is detected, it automatically downloads and executes the latest OS-specific installer (`install_windows.bat` or `install_ubuntu_mac.sh`), which in turn updates the tracker.
 **Technical Value:** This establishes a decentralized, self-healing deployment pipeline. Any bug fixes, feature additions (e.g., Geolocation tracking), or payload modifications pushed to the main repository are immediately propagated to all 20,000 devices upon their next execution cycle, completely eliminating the need for endpoint management software (MDM) redeployments.
 
-### 2. 24-Hour Sync & Asynchronous "Catch-Up" Logic
-**Concept:** OS-level task schedulers trigger the telemetry extraction at 11:59 PM daily, enforcing a strict 12:00 AM to 11:59 PM calculation envelope.
+### 2. Hourly Sync & Asynchronous "Catch-Up" Logic
+**Concept:** OS-level task schedulers (Windows Task Scheduler, macOS launchd, Linux cron) trigger the telemetry extraction every single hour (at the top of the hour).
 **Technical Value:** 
-- **Ideal State:** Devices online at 11:59 PM transmit a mathematically perfect 24-hour block of telemetry.
-- **Offline State:** If a device is powered off at 11:59 PM, the sync fails silently. The script utilizes a local state file (`last_sync.txt`). Upon the next successful network connection (e.g., 9:00 AM the following morning), the script iterates chronologically from the last successful sync date to the current date, retroactively building and transmitting the missing 24-hour JSON payloads. This guarantees **zero data loss**.
+- **Ideal State:** Devices consistently transmit hourly heartbeats, maintaining real-time data accuracy on the dashboard without relying on a single end-of-day sync.
+- **Offline State:** If a device is powered off or disconnected, the script safely catches up. Upon the next successful internet connection (verified via a firewall-proof HTTPS ping to Google), the script iterates chronologically from the last successful sync date to the current date, guaranteeing **zero data loss**.
 
 ### 3. Traffic Throttling via "Global Jitter"
 **Concept:** Before transmitting the JSON payload via HTTP POST, the script initiates a `time.sleep()` using a randomized integer between 1 and 300 seconds (5 minutes).
 **Technical Value:** A synchronized 11:59 PM execution across 20,000 devices would result in a massive traffic spike, effectively executing a self-inflicted DDoS attack on the backend infrastructure. The introduction of global jitter evenly distributes the HTTP requests across a 5-minute window, allowing a standard, cost-effective server to ingest the payloads without requiring highly scaled AWS SQS or Redis queues.
 
-### 4. IP-Based Geolocation Integration
-**Concept:** The tracker executes a non-blocking, rate-limited HTTP GET request to `ip-api.com` to resolve the external IP address to a City, State, and Country.
-**Technical Value:** This negates the need to request OS-level location permissions, avoiding intrusive prompts to the end user. Network exceptions (e.g., firewall blocks, API rate limits) are caught gracefully, defaulting the payload to "Unknown Location" to ensure the core telemetry transmission is never interrupted.
+### 4. Resilient Multi-API Geolocation Caching
+**Concept:** The tracker executes a non-blocking HTTP GET request to resolve the external IP address to a City, State, and Country. It uses an array of three fallback free APIs (ip-api.com, ipwhois.app, ipapi.co) and caches the successful result to the hard drive for 24 hours.
+**Technical Value:** This completely circumvents API rate-limiting blocks caused by 20,000 laptops sharing a single school/corporate public IP address. By caching the location locally for the day, it drastically reduces network overhead while guaranteeing location accuracy.
+
+### 5. Invisible Execution & Dynamic Logging ("Black Box")
+**Concept:** The script runs completely invisibly using `pythonw.exe` on Windows. All standard output and errors are dynamically caught and redirected to local hidden text files (`tracker.log` and `tracker_error.log`).
+**Technical Value:** Without a terminal window, standard `print()` statements cause fatal Python crashes. The dynamic logging system prevents these silent crashes and serves as a local "Black Box" flight recorder, allowing RMS admins to instantly diagnose any endpoint failures directly from the hard drive.
 
 ---
 
@@ -33,8 +37,8 @@ This document serves as the official architectural reference for the ActivityWat
 **Role:** The primary Python execution script running on all endpoint laptops.
 **Architecture & Responsibilities:**
 - **ActivityWatch API Interfacing:** Queries `localhost:5600` to extract raw AFK and Window event buckets.
-- **Data Processing:** Calculates precise Active Time, AFK Time, and Off Time based on a dynamic envelope (Midnight to current execution time).
-- **Fallback Mechanisms:** If the AFK watcher fails, it intelligently recalculates Active Time strictly from the Window event durations.
+- **Data Processing:** Calculates precise Active Time, AFK Time, and Off Time based on a dynamic envelope (Midnight to current execution time), gracefully handling completely empty databases on fresh installs.
+- **Multi-Layer Fallback:** If the primary AFK watcher is blocked (e.g. macOS Privacy Firewalls), it rescues the Active Time calculation by falling back to Window durations, and ultimately to Chrome Web Extension durations.
 - **State Management:** Reads and writes to `last_sync.txt` to manage the offline catch-up loop.
 - **Network Transmission:** Packages the calculated data, System OS, Geolocation, and MAC/Serial identifiers into a JSON payload and POSTs it to the remote FastAPI backend.
 
@@ -44,17 +48,16 @@ This document serves as the official architectural reference for the ActivityWat
 - Downloads and installs the ActivityWatch binaries silently via PowerShell.
 - Decodes the Base64-encoded `activity_tracker.py` script directly into the `%USERPROFILE%\.aw_tracker` directory.
 - Registers a hidden `wscript.exe` VBScript to execute the Python tracker without flashing a command prompt window to the user.
-- **Task Scheduler:** Interfaces with Windows Task Scheduler to register two execution triggers:
-  1. A daily run explicitly at `23:59:00` for the full day telemetry dump.
-  2. A Network Connectivity Event Trigger (EventID 10000) to instantly sync whenever the laptop connects to the internet.
+- **Task Scheduler:** Interfaces with Windows Task Scheduler to register the background trigger:
+  1. An hourly run explicitly executing silently in the background.
 
 ### 3. `install_ubuntu_mac.sh` (Unix Deployment)
 **Role:** The zero-interaction installation payload for macOS and Linux endpoints.
 **Architecture & Responsibilities:**
 - Identifies the host OS and downloads the appropriate ActivityWatch binaries (DMG for Mac, ZIP for Linux) natively using `curl`.
 - Installs ActivityWatch to `/Applications` (Mac) or `/opt` (Linux) silently.
-- **macOS Scheduler (LaunchAgent):** Generates a `com.activitywatch.sync.plist` file in `~/Library/LaunchAgents`. Configures a `StartCalendarInterval` (23:59) and a `WatchPaths` array to instantly trigger a sync whenever the macOS Airport (Wi-Fi) state file changes (network connectivity).
-- **Linux Scheduler (Crontab):** Injects specific CRON expressions (`59 23 * * *` and `0 */3 * * *`) into the user's crontab.
+- **macOS Scheduler (LaunchAgent):** Generates a `com.activitywatch.sync.plist` file in `~/Library/LaunchAgents`. Configures a `StartCalendarInterval` (Minute 0) to trigger an hourly sync in the background.
+- **Linux Scheduler (Crontab):** Injects an hourly CRON expression (`0 * * * *`) into the user's crontab.
 
 ### 4. `update_scripts.py` (The Compiler)
 **Role:** A developer-side utility used to build the final installers.
