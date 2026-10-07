@@ -143,14 +143,50 @@ import time
 import uuid
 import re
 
+# In Windows pythonw, stdout and stderr are None. We dynamically redirect them to a log file to catch any future background errors.
+if sys.stdout is None:
+    sys.stdout = open(os.path.join(os.path.dirname(__file__), 'tracker.log'), 'a', encoding='utf-8')
+if sys.stderr is None:
+    sys.stderr = open(os.path.join(os.path.dirname(__file__), 'tracker_error.log'), 'a', encoding='utf-8')
+
 BACKEND_API_URL = "https://aw-backend.thesama.in/api/track"
+
+# Prevent double-execution if a sync takes longer than the scheduler interval
+LOCK_FILE = os.path.join(os.path.dirname(__file__), 'sync.lock')
+if os.path.exists(LOCK_FILE):
+    try:
+        # If lock is older than 2 hours (crashed run), clear it. Otherwise, exit.
+        if time.time() - os.path.getmtime(LOCK_FILE) > 7200:
+            os.remove(LOCK_FILE)
+        else:
+            print("Another instance is currently running. Exiting.")
+            sys.exit(0)
+    except Exception:
+        sys.exit(0)
+
+try:
+    with open(LOCK_FILE, 'w') as f:
+        f.write(str(os.getpid()))
+except Exception:
+    pass
+
+def cleanup_lock():
+    try:
+        if os.path.exists(LOCK_FILE):
+            os.remove(LOCK_FILE)
+    except Exception:
+        pass
+        
+import atexit
+atexit.register(cleanup_lock)
 
 def check_installer_updates():
     try:
-        api_url = "https://api.github.com/repos/SamaOps/ActivityWatch/releases/latest"
+        # Use raw github content to bypass the 60/hr API rate limit that gets schools banned
+        api_url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/installer_version.txt"
         res = requests.get(api_url, timeout=10)
         if res.status_code == 200:
-            new_version = res.json().get("tag_name", "").strip()
+            new_version = res.text.strip()
             
             version_file = os.path.join(os.path.dirname(__file__), 'installer_version.txt')
             current_version = ""
@@ -211,9 +247,21 @@ def auto_update():
                 
             # If the GitHub code is different, update the local file and restart
             if new_code.strip() != current_code.strip():
-                print("New version found! Updating and restarting...")
-                with open(__file__, 'w') as f:
+                print("New version found! Running safe compilation test...")
+                temp_file = os.path.join(os.path.dirname(__file__), 'update_temp.py')
+                with open(temp_file, 'w') as f:
                     f.write(new_code)
+                
+                # Verify syntax before applying (Bricked Laptop Safeguard)
+                try:
+                    compile(new_code, 'update_temp.py', 'exec')
+                except SyntaxError:
+                    print("Downloaded update contains syntax errors. Aborting to protect tracker.")
+                    os.remove(temp_file)
+                    return
+                
+                # Replace current file safely
+                os.replace(temp_file, __file__)
                 
                 kwargs = {}
                 if os.name == 'nt':
@@ -234,50 +282,76 @@ def get_mac_address():
 
 # Automatically get the laptop serial number based on OS
 def get_serial_number():
-    system = platform.system()
+    # Provide a mathematically unique UUID to prevent generic OEM serial collisions
+    id_file = os.path.join(os.path.dirname(__file__), 'device_id.txt')
     try:
-        if system == "Windows":
-            try:
-                return subprocess.check_output("wmic bios get serialnumber", shell=True, creationflags=0x08000000).decode().split('\n')[1].strip()
-            except Exception:
-                return subprocess.check_output('powershell -NoProfile -Command "(Get-WmiObject win32_bios).SerialNumber"', shell=True, creationflags=0x08000000).decode().strip()
-        elif system == "Linux":
-            try:
-                with open("/etc/machine-id", "r") as f:
-                    return f.read().strip()
-            except Exception:
-                try:
-                    with open("/var/lib/dbus/machine-id", "r") as f:
-                        return f.read().strip()
-                except Exception:
-                    pass
-        elif system == "Darwin": # macOS
-            mac_serial = subprocess.check_output("/usr/sbin/ioreg -l | /usr/bin/grep IOPlatformSerialNumber | /usr/bin/awk -F'\"' '{print $4}'", shell=True).decode().strip()
-            return mac_serial if mac_serial else "Unknown-Serial"
-    except Exception as e:
-        pass
-    return "Unknown-Serial"
-
-def get_location():
-    try:
-        res = requests.get("http://ip-api.com/json", timeout=5)
-        if res.status_code == 200:
-            data = res.json()
-            city = data.get("city", "")
-            region = data.get("regionName", "")
-            country = data.get("country", "")
-            if city and country:
-                return f"{city}, {region}, {country}".strip(", ")
+        if os.path.exists(id_file):
+            with open(id_file, 'r') as f:
+                return f.read().strip()
     except Exception:
         pass
+        
+    new_id = str(uuid.uuid4())
+    try:
+        with open(id_file, 'w') as f:
+            f.write(new_id)
+    except Exception:
+        pass
+    return new_id
+
+def get_location():
+    cache_file = os.path.join(os.path.dirname(__file__), 'location_cache.txt')
+    # Check if we already fetched location today
+    try:
+        if os.path.exists(cache_file):
+            mod_time = datetime.fromtimestamp(os.path.getmtime(cache_file))
+            if mod_time.date() == datetime.now().date():
+                with open(cache_file, 'r') as f:
+                    return f.read().strip()
+    except Exception:
+        pass
+
+    # Try multiple free APIs to bypass rate limits
+    apis = [
+        "http://ip-api.com/json",
+        "https://ipwhois.app/json/",
+        "https://ipapi.co/json/"
+    ]
+    
+    for api in apis:
+        try:
+            # Use appropriate User-Agent to avoid blocks
+            headers = {"User-Agent": "Mozilla/5.0"}
+            res = requests.get(api, headers=headers, timeout=5)
+            if res.status_code == 200:
+                data = res.json()
+                city = data.get("city", "")
+                region = data.get("regionName", "") or data.get("region", "")
+                country = data.get("country", "") or data.get("country_name", "")
+                
+                if city and country:
+                    loc = f"{city}, {region}, {country}".strip(", ")
+                    # Cache it for today
+                    try:
+                        with open(cache_file, 'w') as f:
+                            f.write(loc)
+                    except Exception:
+                        pass
+                    return loc
+        except Exception:
+            continue
+            
+    # If all fail, return cached value from yesterday if it exists
+    try:
+        if os.path.exists(cache_file):
+            with open(cache_file, 'r') as f:
+                return f.read().strip()
+    except Exception:
+        pass
+
     return "Unknown Location"
 
-def format_duration(seconds):
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    if hours > 0:
-        return f"{hours}h {minutes}m"
-    return f"{minutes}m"
+
 
 # Fetch data from ActivityWatch local server
 AW_URL = "http://localhost:5600/api/0/buckets"
@@ -310,14 +384,16 @@ def get_daily_events(target_date):
         web_bucket = None
         afk_bucket = None
         
-        # Find the active buckets
-        for b in buckets.keys():
-            if b.startswith("aw-watcher-window"):
-                window_bucket = b
-            elif b.startswith("aw-watcher-web"):
-                web_bucket = b
-            elif b.startswith("aw-watcher-afk"):
-                afk_bucket = b
+        # Find the active buckets by picking the most recently updated one
+        def get_latest_bucket(prefix):
+            matching = [b for b in buckets.keys() if b.startswith(prefix)]
+            if not matching: return None
+            # Fresh installs return 'null' (None) for last_updated. We use 'or ""' to prevent sorting crashes.
+            return sorted(matching, key=lambda x: buckets[x].get('last_updated') or "", reverse=True)[0]
+            
+        window_bucket = get_latest_bucket("aw-watcher-window")
+        web_bucket = get_latest_bucket("aw-watcher-web")
+        afk_bucket = get_latest_bucket("aw-watcher-afk")
                 
         active_time = 0
         afk_time = 0
@@ -383,8 +459,12 @@ def get_daily_events(target_date):
         if window_bucket:
             events_url = f"{AW_URL}/{window_bucket}/events?start={start_str}&end={end_str}"
             events = requests.get(events_url).json()
+            inactive_apps = ['loginwindow', 'screensaverengine', 'window server', 'lockapp.exe', 'logonui.exe', 'idle']
             for e in events:
                 app = e['data'].get('app', 'Unknown')
+                if app.lower() in inactive_apps:
+                    continue
+                    
                 duration = e.get('duration', 0)
                 top_apps[app] = top_apps.get(app, 0) + duration
                 
@@ -404,8 +484,8 @@ def get_daily_events(target_date):
                         pass
                         
             # If the AFK watcher crashed (active time is still 0 but apps were opened), use window duration as fallback
-            if active_time == 0 and len(events) > 0:
-                active_time = sum([e.get('duration', 0) for e in events])
+            if active_time == 0 and len(top_apps) > 0:
+                active_time = sum(top_apps.values())
                 
         # 3. Calculate top websites from web bucket
         if web_bucket:
@@ -455,9 +535,9 @@ def get_daily_events(target_date):
         return {
             "Date": start_local.strftime("%m/%d/%Y"),
             "Day_of_Week": start_local.strftime("%A"),
-            "Total_Active_Time": format_duration(active_time),
-            "AFK_Time": format_duration(afk_time),
-            "Off_Time": format_duration(off_time),
+            "Total_Active_Time": str(int(active_time)),
+            "AFK_Time": str(int(afk_time)),
+            "Off_Time": str(int(off_time)),
             "First_Active": first_active_str,
             "Last_Active": last_active_str,
             "Times_Opened": str(times_opened),
@@ -492,12 +572,28 @@ def check_and_start_engines():
     except Exception as e:
         print(f"Failed to start engines: {e}")
 
+def wait_for_internet(timeout=300):
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            # Use standard HTTPS to a guaranteed unblocked site (Google) 
+            # instead of DNS (1.1.1.1:53) which schools often block.
+            requests.get("https://www.google.com", timeout=3)
+            return True
+        except Exception:
+            time.sleep(5)
+    return False
+
 def main():
     # Global Jitter: Wait up to 5 minutes before doing ANYTHING to prevent DDoS on GitHub/Render.
     # We skip this if run interactively by a user in the terminal.
-    if not sys.stdout.isatty():
+    is_interactive = getattr(sys, 'stdout', None) is not None and sys.stdout.isatty()
+    if not is_interactive:
         delay = random.randint(1, 300)
         time.sleep(delay)
+
+    # Block until internet is fully connected (solves the Wi-Fi race condition on wake)
+    wait_for_internet(300)
 
     check_installer_updates()
     # Attempt to fetch and apply OTA updates before doing anything
@@ -555,16 +651,16 @@ def main():
         
         print("Preparing to send to AWS rds Database...")
         try:
-            # Jitter: wait a random time between 1 and 300 seconds (5 minutes) to prevent 20,000 laptops from hitting the server at the exact same second
-            delay = random.randint(1, 300)
-            print(f"Jitter: Waiting {delay} seconds before sending...")
-            time.sleep(delay)
-            
             headers = {"X-API-KEY": "aw-v2-enterprise-secret-key"}
             res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=90, allow_redirects=False)
-            if res.status_code in [200, 302, 303, 404]:
+            if res.status_code in [200, 201]:
                 print(f"✅ Successfully sent data for {current_date.strftime('%Y-%m-%d')}!")
                 # Save sync success for this date
+                with open(sync_file, 'w') as f:
+                    f.write(current_date.strftime("%Y-%m-%d"))
+            elif res.status_code >= 400 and res.status_code < 500 and res.status_code != 429:
+                print(f"⚠️ Unrecoverable Client Error ({res.status_code}). Skipping day to prevent infinite loop.")
+                # Mark as synced so we don't get permanently stuck
                 with open(sync_file, 'w') as f:
                     f.write(current_date.strftime("%Y-%m-%d"))
             else:
@@ -604,13 +700,8 @@ if [ "$(uname)" == "Darwin" ]; then
         <string>/Library/Preferences/SystemConfiguration/com.apple.airport.preferences.plist</string>
         <string>/Library/Preferences/SystemConfiguration/com.apple.wifi.message-tracer.plist</string>
     </array>
-    <key>StartCalendarInterval</key>
-    <array>
-        <dict>
-            <key>Minute</key>
-            <integer>0</integer>
-        </dict>
-    </array>
+    <key>StartInterval</key>
+    <integer>3600</integer>
 </dict>
 </plist>
 EOF_PLIST
