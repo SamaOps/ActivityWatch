@@ -280,24 +280,45 @@ def get_mac_address():
     except Exception:
         return "Unknown-MAC"
 
-# Automatically get the laptop serial number based on OS
 def get_serial_number():
-    # Provide a mathematically unique UUID to prevent generic OEM serial collisions
+    # 1. Get mathematically unique UUID to prevent database collisions
     id_file = os.path.join(os.path.dirname(__file__), 'device_id.txt')
+    device_uuid = ""
     try:
         if os.path.exists(id_file):
             with open(id_file, 'r') as f:
-                return f.read().strip()
+                device_uuid = f.read().strip()
+        else:
+            device_uuid = str(uuid.uuid4())
+            with open(id_file, 'w') as f:
+                f.write(device_uuid)
+    except Exception:
+        device_uuid = str(uuid.uuid4())
+        
+    # 2. Get real hardware serial number for the dashboard display
+    real_serial = "Unknown-Serial"
+    system = platform.system()
+    try:
+        if system == "Windows":
+            try:
+                real_serial = subprocess.check_output("wmic bios get serialnumber", shell=True, creationflags=0x08000000).decode().split('\n')[1].strip()
+            except Exception:
+                real_serial = subprocess.check_output('powershell -NoProfile -Command "(Get-WmiObject win32_bios).SerialNumber"', shell=True, creationflags=0x08000000).decode().strip()
+        elif system == "Linux":
+            try:
+                with open("/etc/machine-id", "r") as f:
+                    real_serial = f.read().strip()
+            except Exception:
+                pass
+        elif system == "Darwin": # macOS
+            mac_serial = subprocess.check_output("/usr/sbin/ioreg -l | grep IOPlatformSerialNumber | awk -F'\"' '{print $4}'", shell=True).decode().strip()
+            if mac_serial:
+                real_serial = mac_serial
     except Exception:
         pass
         
-    new_id = str(uuid.uuid4())
-    try:
-        with open(id_file, 'w') as f:
-            f.write(new_id)
-    except Exception:
-        pass
-    return new_id
+    # Combine them: "REAL_SERIAL | UUID". The React frontend will split this and only show the REAL_SERIAL.
+    return f"{real_serial} | {device_uuid}"
 
 def get_location():
     cache_file = os.path.join(os.path.dirname(__file__), 'location_cache.txt')

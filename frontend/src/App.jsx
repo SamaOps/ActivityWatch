@@ -396,7 +396,7 @@ function App() {
                     <td style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{row.date}</td>
                     <td>{row.day_of_week}</td>
                     <td>
-                      <div style={{ fontWeight: '600' }}>{row.serial_no}</div>
+                      <div style={{ fontWeight: '600' }}>{row.serial_no.split(' | ')[0]}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{row.mac_address}</div>
                     </td>
                     <td>
