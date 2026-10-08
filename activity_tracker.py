@@ -49,26 +49,28 @@ def cleanup_lock():
 import atexit
 atexit.register(cleanup_lock)
 
+def get_latest_release_tag():
+    """Get the latest GitHub release tag by following the /releases/latest redirect.
+    Does NOT use the GitHub API so there is no 60/hr rate limit — safe for school NAT networks."""
+    try:
+        res = requests.get(
+            "https://github.com/SamaOps/ActivityWatch/releases/latest",
+            allow_redirects=True, timeout=10
+        )
+        # Final URL format: https://github.com/.../releases/tag/v1.25
+        if '/tag/' in res.url:
+            return res.url.split('/tag/')[-1].strip()
+    except Exception:
+        pass
+    return None
+
 def check_installer_updates():
     try:
-        # Check latest release tag from GitHub — works on public AND private repos,
-        # stable URLs, and no 60/hr API rate limit issues.
-        version_url = "https://github.com/SamaOps/ActivityWatch/releases/latest/download/installer_version.txt"
-        res = requests.get(version_url, timeout=10)
-        if res.status_code != 200:
-            return
+        latest_tag = get_latest_release_tag()
+        if not latest_tag or latest_tag == TRACKER_VERSION:
+            return  # Already on latest version
 
-        new_version = res.text.strip()
-        version_file = os.path.join(os.path.dirname(__file__), 'installer_version.txt')
-        current_version = ""
-        if os.path.exists(version_file):
-            with open(version_file, 'r') as f:
-                current_version = f.read().strip()
-
-        if new_version == "" or new_version == current_version:
-            return
-
-        print(f"New installer version found ({new_version})! Downloading and running...")
+        print(f"New version available ({latest_tag} vs current {TRACKER_VERSION})! Downloading installer...")
 
         system = platform.system()
         if system == "Windows":
@@ -94,9 +96,6 @@ def check_installer_updates():
                 kwargs['creationflags'] = 0x08000000
             subprocess.Popen(cmd + [script_path], **kwargs)
 
-            with open(version_file, 'w') as f:
-                f.write(new_version)
-
             # Exit immediately so the new installer can run cleanly without collision
             sys.exit(0)
     except Exception:
@@ -104,8 +103,12 @@ def check_installer_updates():
 
 def auto_update():
     try:
-        # Fetch latest tracker from GitHub release — stable URL, no cache issues,
-        # works on public AND private repos, no signing required.
+        # Check tag first — avoids downloading the whole file if already up to date
+        latest_tag = get_latest_release_tag()
+        if not latest_tag or latest_tag == TRACKER_VERSION:
+            return  # Already on latest version
+
+        print(f"New tracker version available ({latest_tag})! Downloading...")
         url = "https://github.com/SamaOps/ActivityWatch/releases/latest/download/activity_tracker.py"
         res = requests.get(url, timeout=10)
         if res.status_code != 200:
@@ -115,17 +118,18 @@ def auto_update():
 
         # Validation: ensure the downloaded file is our Python script, not a 404 page or corrupted data
         if "def main():" not in new_code or "import requests" not in new_code:
-            print("Downloaded update is corrupted or invalid. Aborting update.")
+            print("Downloaded update is invalid. Aborting.")
             return
 
-        # Check if it's actually different from what's running
-        with open(__file__, 'r') as f:
-            current_code = f.read()
+        # Guard against infinite update loop: if the new file's TRACKER_VERSION doesn't match
+        # the release tag, the developer forgot to bump it — applying it would re-trigger the
+        # update on every restart.
+        import re
+        version_match = re.search(r'TRACKER_VERSION\s*=\s*["\']([^"\']+)["\']', new_code)
+        if not version_match or version_match.group(1) != latest_tag:
+            print(f"Downloaded file has TRACKER_VERSION={version_match.group(1) if version_match else '?'} but release tag is {latest_tag}. Aborting to prevent update loop.")
+            return
 
-        if new_code.strip() == current_code.strip():
-            return  # Already up to date
-
-        print("New tracker version found! Running safe compilation test...")
         temp_file = os.path.join(os.path.dirname(__file__), 'update_temp.py')
         with open(temp_file, 'w') as f:
             f.write(new_code)
@@ -140,7 +144,7 @@ def auto_update():
 
         # Atomically replace current file and restart
         os.replace(temp_file, __file__)
-        print("Update applied! Restarting tracker...")
+        print(f"Updated to {latest_tag}! Restarting tracker...")
 
         kwargs = {}
         if os.name == 'nt':
