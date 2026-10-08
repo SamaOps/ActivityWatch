@@ -114,9 +114,10 @@ def track_activity(payload: ActivityPayload, db: Session = Depends(get_db), api_
 # ----------------- DASHBOARD / DATA ENDPOINTS -----------------
 @app.get("/api/data")
 def get_all_data(
-    date: Optional[str] = None, 
-    serial_no: Optional[str] = None, 
-    db: Session = Depends(get_db)
+    date: Optional[str] = None,
+    serial_no: Optional[str] = None,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(get_api_key)
 ):
     """Retrieve all student tracking data. Optionally filter by date or serial_no."""
     query = db.query(DailyActivity)
@@ -124,12 +125,12 @@ def get_all_data(
         query = query.filter(DailyActivity.date == date)
     if serial_no:
         query = query.filter(DailyActivity.serial_no == serial_no)
-    
+
     # Return newest records first
     return query.order_by(desc(DailyActivity.id)).all()
 
 @app.get("/api/devices")
-def get_unique_devices(db: Session = Depends(get_db)):
+def get_unique_devices(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     """Retrieve a list of all unique laptop serial numbers tracked so far."""
     devices = db.query(DailyActivity.serial_no).distinct().all()
     # Flatten the result list
@@ -139,9 +140,9 @@ def get_unique_devices(db: Session = Depends(get_db)):
 def read_root():
     return {"status": "Online", "message": "ActivityWatch Backend is fully operational!"}
 
-@app.get("/api/delete_test")
-def delete_test_data(db: Session = Depends(get_db)):
-    """Temporary endpoint to delete test data."""
+@app.post("/api/delete_test")
+def delete_test_data(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
+    """Delete all TEST device records. Requires API key. POST to prevent accidental triggering."""
     deleted_count = db.query(DailyActivity).filter(DailyActivity.serial_no == "TEST").delete()
     db.commit()
     return {"status": "success", "message": f"Deleted {deleted_count} TEST records!"}
