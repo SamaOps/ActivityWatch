@@ -36,6 +36,7 @@ class DailyActivity(Base):
     top_apps = Column(String)
     location = Column(String)
     last_sync_time = Column(String)
+    tracker_version = Column(String)
 
 # Automatically create the database tables if they don't exist
 Base.metadata.create_all(bind=engine)
@@ -45,6 +46,7 @@ try:
     with engine.connect() as conn:
         conn.execute(text("ALTER TABLE daily_activity ADD COLUMN location VARCHAR;"))
         conn.execute(text("ALTER TABLE daily_activity ADD COLUMN last_sync_time VARCHAR;"))
+        conn.execute(text("ALTER TABLE daily_activity ADD COLUMN tracker_version VARCHAR;"))
         conn.commit()
 except Exception:
     pass # Columns likely already exist

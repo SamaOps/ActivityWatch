@@ -18,6 +18,7 @@ if sys.stderr is None:
     sys.stderr = open(os.path.join(os.path.dirname(__file__), 'tracker_error.log'), 'a', encoding='utf-8')
 
 BACKEND_API_URL = "https://aw-backend.thesama.in/api/track"
+TRACKER_VERSION = "v1.24"
 
 # Prevent double-execution if a sync takes longer than the scheduler interval
 LOCK_FILE = os.path.join(os.path.dirname(__file__), 'sync.lock')
@@ -553,7 +554,8 @@ def main():
             "Top_Websites": aw_data["Top_Websites"],
             "Top_Apps": aw_data["Top_Apps"],
             "Location": get_location(),
-            "Last_Sync_Time": datetime.now().strftime("%m/%d/%Y %I:%M %p")
+            "Last_Sync_Time": datetime.now().strftime("%m/%d/%Y %I:%M %p"),
+            "Tracker_Version": TRACKER_VERSION
         }
         
         print("Preparing to send to AWS rds Database...")
