@@ -129,7 +129,7 @@ fi
 
 echo "Setting up Python Tracker..."
 mkdir -p ~/.aw_tracker
-curl -sSL -o ~/.aw_tracker/activity_tracker.py "https://github.com/SamaOps/ActivityWatch/releases/latest/download/activity_tracker.py"
+curl -sSL -o ~/.aw_tracker/activity_tracker.py "https://github.com/prakash-dey/activitywatch/releases/latest/download/activity_tracker.py"
 
 if [ "$(uname)" == "Darwin" ]; then
     PYTHON_PATH=$(which python3)

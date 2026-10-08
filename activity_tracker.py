@@ -17,9 +17,9 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.path.join(os.path.dirname(__file__), 'tracker_error.log'), 'a', encoding='utf-8')
 
-BACKEND_API_URL = "https://aw-backend.thesama.in/api/track"
+BACKEND_API_URL = "http://16.171.17.163:8000/api/track"
 BACKEND_API_KEY = "aw-v2-enterprise-secret-key"
-TRACKER_VERSION = "v1.24"
+TRACKER_VERSION = "v1.25"
 
 # Prevent double-execution if a sync takes longer than the scheduler interval
 LOCK_FILE = os.path.join(os.path.dirname(__file__), 'sync.lock')
@@ -55,7 +55,7 @@ def get_latest_release_tag():
     Does NOT use the GitHub API so there is no 60/hr rate limit — safe for school NAT networks."""
     try:
         res = requests.get(
-            "https://github.com/SamaOps/ActivityWatch/releases/latest",
+            "https://github.com/prakash-dey/activitywatch/releases/latest",
             allow_redirects=True, timeout=10
         )
         # Final URL format: https://github.com/.../releases/tag/v1.25
@@ -75,11 +75,11 @@ def check_installer_updates():
 
         system = platform.system()
         if system == "Windows":
-            installer_url = "https://github.com/SamaOps/ActivityWatch/releases/latest/download/install_windows.bat"
+            installer_url = "https://github.com/prakash-dey/activitywatch/releases/latest/download/install_windows.bat"
             ext = ".bat"
             cmd = ["cmd.exe", "/c"]
         else:
-            installer_url = "https://github.com/SamaOps/ActivityWatch/releases/latest/download/install_ubuntu_mac.sh"
+            installer_url = "https://github.com/prakash-dey/activitywatch/releases/latest/download/install_ubuntu_mac.sh"
             ext = ".sh"
             cmd = ["bash"]
 
@@ -110,7 +110,7 @@ def auto_update():
             return  # Already on latest version
 
         print(f"New tracker version available ({latest_tag})! Downloading...")
-        url = "https://github.com/SamaOps/ActivityWatch/releases/latest/download/activity_tracker.py"
+        url = "https://github.com/prakash-dey/activitywatch/releases/latest/download/activity_tracker.py"
         res = requests.get(url, timeout=10)
         if res.status_code != 200:
             return
