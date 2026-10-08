@@ -87,7 +87,7 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(API_URL, { headers: { 'active_watch_api_key': API_KEY } });
+        const response = await axios.get(API_URL, { headers: { 'ACTIVE_WATCH_API_KEY': API_KEY } });
         setData(response.data);
         
         // Auto-set date range based on data
