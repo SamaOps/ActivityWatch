@@ -11,7 +11,7 @@ import os
 app = FastAPI(title="ActivityWatch Tracker Backend")
 
 API_KEY = os.getenv("API_KEY", "aw-v2-enterprise-secret-key")
-api_key_header = APIKeyHeader(name="ACTIVE_WATCH_API_KEY", auto_error=False)
+api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 
 def get_api_key(api_key_header: str = Security(api_key_header)):
     if api_key_header == API_KEY:

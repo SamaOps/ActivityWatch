@@ -8,7 +8,7 @@ import {
 import { format, parse, isAfter, isBefore, isEqual } from 'date-fns';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://activitywatch-j5d5.onrender.com/api/data';
-const API_KEY = import.meta.env.VITE_API_KEY || 'aw-v2-enterprise-secret-key';
+const API_KEY = import.meta.env.VITE_ACTIVE_WATCH_API_KEY || 'aw-v2-enterprise-secret-key';
 
 const COLORS = ['#38bdf8', '#fb923c', '#10b981', '#8b5cf6', '#ef4444'];
 
@@ -87,7 +87,7 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(API_URL, { headers: { 'ACTIVE_WATCH_API_KEY': API_KEY } });
+        const response = await axios.get(API_URL, { headers: { 'X-API-KEY': API_KEY } });
         setData(response.data);
         
         // Auto-set date range based on data

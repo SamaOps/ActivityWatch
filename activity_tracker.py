@@ -558,7 +558,7 @@ def main():
         
         print("Preparing to send to AWS rds Database...")
         try:
-            headers = {"ACTIVE_WATCH_API_KEY": "aw-v2-enterprise-secret-key"}
+            headers = {"X-API-KEY": "aw-v2-enterprise-secret-key"}
             res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=90, allow_redirects=False)
             if res.status_code in [200, 201]:
                 print(f"✅ Successfully sent data for {current_date.strftime('%Y-%m-%d')}!")
