@@ -10,11 +10,22 @@ import os
 
 app = FastAPI(title="ActivityWatch Tracker Backend")
 
-API_KEY = os.getenv("API_KEY", "aw-v2-enterprise-secret-key")
+# Write key is baked into the widely-distributed tracker; read key stays only
+# in the dashboard. A leaked write key can POST data but cannot read the fleet.
+WRITE_KEY = os.getenv("TRACKER_WRITE_KEY", "aw-write-key-change-me")
+READ_KEY = os.getenv("DASHBOARD_READ_KEY", "aw-read-key-change-me")
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 
-def get_api_key(api_key_header: str = Security(api_key_header)):
-    if api_key_header == API_KEY:
+def require_write_key(api_key_header: str = Security(api_key_header)):
+    if api_key_header == WRITE_KEY:
+        return api_key_header
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Could not validate API key",
+    )
+
+def require_read_key(api_key_header: str = Security(api_key_header)):
+    if api_key_header == READ_KEY:
         return api_key_header
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
@@ -59,7 +70,7 @@ class ActivityPayload(BaseModel):
 
 # ----------------- INGESTION ENDPOINT -----------------
 @app.post("/api/track")
-def track_activity(payload: ActivityPayload, db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
+def track_activity(payload: ActivityPayload, db: Session = Depends(get_db), api_key: str = Depends(require_write_key)):
     from sqlalchemy import or_
     
     # 1. Search the database to see if this exact laptop already has a row for this Date
@@ -120,7 +131,7 @@ def get_all_data(
     date: Optional[str] = None,
     serial_no: Optional[str] = None,
     db: Session = Depends(get_db),
-    api_key: str = Depends(get_api_key)
+    api_key: str = Depends(require_read_key)
 ):
     """Retrieve all student tracking data. Optionally filter by date or serial_no."""
     query = db.query(DailyActivity)
@@ -133,7 +144,7 @@ def get_all_data(
     return query.order_by(desc(DailyActivity.id)).all()
 
 @app.get("/api/devices")
-def get_unique_devices(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
+def get_unique_devices(db: Session = Depends(get_db), api_key: str = Depends(require_read_key)):
     """Retrieve a list of all unique laptop serial numbers tracked so far."""
     devices = db.query(DailyActivity.serial_no).distinct().all()
     # Flatten the result list
@@ -144,7 +155,7 @@ def read_root():
     return {"status": "Online", "message": "ActivityWatch Backend is fully operational!"}
 
 @app.post("/api/delete_test")
-def delete_test_data(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
+def delete_test_data(db: Session = Depends(get_db), api_key: str = Depends(require_read_key)):
     """Delete all TEST device records. Requires API key. POST to prevent accidental triggering."""
     deleted_count = db.query(DailyActivity).filter(DailyActivity.serial_no == "TEST").delete()
     db.commit()

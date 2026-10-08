@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  validate-and-upload:
+  linux-assets:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,10 +29,41 @@ jobs:
 
           echo "Version check passed."
 
-      - name: Upload release assets
+      - name: Inject write key into tracker
+        env:
+          WKEY: ${{ secrets.TRACKER_WRITE_KEY }}
+        run: |
+          sed -i "s|__INJECT_TRACKER_WRITE_KEY__|${WKEY}|" activity_tracker.py
+
+      - name: Upload .py and installers
         uses: softprops/action-gh-release@v2
         with:
           files: |
             activity_tracker.py
             install_windows.bat
             install_ubuntu_mac.sh
+
+  windows-exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Inject write key into tracker
+        env:
+          WKEY: ${{ secrets.TRACKER_WRITE_KEY }}
+        run: |
+          (Get-Content activity_tracker.py) -replace '__INJECT_TRACKER_WRITE_KEY__', $env:WKEY | Set-Content activity_tracker.py
+
+      - name: Build exe
+        run: |
+          pip install pyinstaller requests
+          pyinstaller --onefile --noconsole --name activity_tracker activity_tracker.py
+
+      - name: Upload exe
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/activity_tracker.exe

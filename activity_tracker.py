@@ -11,18 +11,28 @@ import time
 import uuid
 import re
 
+# Persistent directory for all state files (device_id, last_sync, lock, logs).
+# When frozen as a one-file exe, __file__ points to a temp dir that is wiped on
+# exit, so we use the exe's actual folder instead to keep state across runs.
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(__file__)
+
 # In Windows pythonw, stdout and stderr are None. We dynamically redirect them to a log file to catch any future background errors.
 if sys.stdout is None:
-    sys.stdout = open(os.path.join(os.path.dirname(__file__), 'tracker.log'), 'a', encoding='utf-8')
+    sys.stdout = open(os.path.join(BASE_DIR, 'tracker.log'), 'a', encoding='utf-8')
 if sys.stderr is None:
-    sys.stderr = open(os.path.join(os.path.dirname(__file__), 'tracker_error.log'), 'a', encoding='utf-8')
+    sys.stderr = open(os.path.join(BASE_DIR, 'tracker_error.log'), 'a', encoding='utf-8')
 
 BACKEND_API_URL = "http://16.171.17.163:8000/api/track"
-BACKEND_API_KEY = "aw-v2-enterprise-secret-key"
-TRACKER_VERSION = "v1.25"
+# Write-only key. The CI release build replaces the placeholder below with the
+# real key from a GitHub secret; for local .py runs, set TRACKER_WRITE_KEY.
+BACKEND_API_KEY = os.getenv("TRACKER_WRITE_KEY") or "__INJECT_TRACKER_WRITE_KEY__"
+TRACKER_VERSION = "v1.26"
 
 # Prevent double-execution if a sync takes longer than the scheduler interval
-LOCK_FILE = os.path.join(os.path.dirname(__file__), 'sync.lock')
+LOCK_FILE = os.path.join(BASE_DIR, 'sync.lock')
 if os.path.exists(LOCK_FILE):
     try:
         # If lock is older than 2 hours (crashed run), clear it. Otherwise, exit.
@@ -166,7 +176,7 @@ def get_mac_address():
 
 def get_serial_number():
     # 1. Get mathematically unique UUID to prevent database collisions
-    id_file = os.path.join(os.path.dirname(__file__), 'device_id.txt')
+    id_file = os.path.join(BASE_DIR, 'device_id.txt')
     device_uuid = ""
     try:
         if os.path.exists(id_file):
@@ -205,7 +215,7 @@ def get_serial_number():
     return f"{real_serial} | {device_uuid}"
 
 def get_location():
-    cache_file = os.path.join(os.path.dirname(__file__), 'location_cache.txt')
+    cache_file = os.path.join(BASE_DIR, 'location_cache.txt')
     # Check if we already fetched location today
     try:
         if os.path.exists(cache_file):
@@ -530,7 +540,7 @@ def main():
     
     print("Gathering data from ActivityWatch...")
     
-    sync_file = os.path.join(os.path.dirname(__file__), 'last_sync.txt')
+    sync_file = os.path.join(BASE_DIR, 'last_sync.txt')
     today = datetime.now()
     
     start_date = today
