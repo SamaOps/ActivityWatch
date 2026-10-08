@@ -51,94 +51,104 @@ atexit.register(cleanup_lock)
 
 def check_installer_updates():
     try:
-        # Use raw github content to bypass the 60/hr API rate limit that gets schools banned
-        api_url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/installer_version.txt"
-        res = requests.get(api_url, timeout=10)
-        if res.status_code == 200:
-            new_version = res.text.strip()
-            
-            version_file = os.path.join(os.path.dirname(__file__), 'installer_version.txt')
-            current_version = ""
-            if os.path.exists(version_file):
-                with open(version_file, 'r') as f:
-                    current_version = f.read().strip()
-                    
-            if new_version != current_version and new_version != "":
-                print("New installer version found! Running remote installer...")
-                
-                system = platform.system()
-                if system == "Windows":
-                    installer_url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/install_windows.bat"
-                    ext = ".bat"
-                    cmd = ["cmd.exe", "/c"]
-                else:
-                    installer_url = "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/install_ubuntu_mac.sh"
-                    ext = ".sh"
-                    cmd = ["bash"]
-                
-                inst_res = requests.get(f"{installer_url}?t={time.time()}", timeout=30)
-                if inst_res.status_code == 200:
-                    script_path = os.path.join(os.path.dirname(__file__), f"update_installer{ext}")
-                    with open(script_path, 'w') as f:
-                        f.write(inst_res.text)
-                    
-                    if system != "Windows":
-                        os.chmod(script_path, 0o755)
-                        
-                    kwargs = {}
-                    if os.name == 'nt':
-                        kwargs['creationflags'] = 0x08000000
-                    subprocess.Popen(cmd + [script_path], **kwargs)
-                    
-                    with open(version_file, 'w') as f:
-                        f.write(new_version)
-                    
-                    # Exit immediately so the new installer can run cleanly without collision
-                    sys.exit(0)
+        # Check latest release tag from GitHub — works on public AND private repos,
+        # stable URLs, and no 60/hr API rate limit issues.
+        version_url = "https://github.com/SamaOps/ActivityWatch/releases/latest/download/installer_version.txt"
+        res = requests.get(version_url, timeout=10)
+        if res.status_code != 200:
+            return
+
+        new_version = res.text.strip()
+        version_file = os.path.join(os.path.dirname(__file__), 'installer_version.txt')
+        current_version = ""
+        if os.path.exists(version_file):
+            with open(version_file, 'r') as f:
+                current_version = f.read().strip()
+
+        if new_version == "" or new_version == current_version:
+            return
+
+        print(f"New installer version found ({new_version})! Downloading and running...")
+
+        system = platform.system()
+        if system == "Windows":
+            installer_url = "https://github.com/SamaOps/ActivityWatch/releases/latest/download/install_windows.bat"
+            ext = ".bat"
+            cmd = ["cmd.exe", "/c"]
+        else:
+            installer_url = "https://github.com/SamaOps/ActivityWatch/releases/latest/download/install_ubuntu_mac.sh"
+            ext = ".sh"
+            cmd = ["bash"]
+
+        inst_res = requests.get(installer_url, timeout=30)
+        if inst_res.status_code == 200:
+            script_path = os.path.join(os.path.dirname(__file__), f"update_installer{ext}")
+            with open(script_path, 'w') as f:
+                f.write(inst_res.text)
+
+            if system != "Windows":
+                os.chmod(script_path, 0o755)
+
+            kwargs = {}
+            if os.name == 'nt':
+                kwargs['creationflags'] = 0x08000000
+            subprocess.Popen(cmd + [script_path], **kwargs)
+
+            with open(version_file, 'w') as f:
+                f.write(new_version)
+
+            # Exit immediately so the new installer can run cleanly without collision
+            sys.exit(0)
     except Exception:
         pass
 
 def auto_update():
     try:
-        # Fetch the master version of this script from GitHub, using a timestamp to bypass cache
-        url = f"https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/activity_tracker.py?t={time.time()}"
+        # Fetch latest tracker from GitHub release — stable URL, no cache issues,
+        # works on public AND private repos, no signing required.
+        url = "https://github.com/SamaOps/ActivityWatch/releases/latest/download/activity_tracker.py"
         res = requests.get(url, timeout=10)
-        if res.status_code == 200:
-            new_code = res.text
-            
-            # Validation: Ensure the downloaded code is actually our python script and not corrupted
-            if "def main():" not in new_code or "import requests" not in new_code:
-                print("Downloaded update is corrupted. Aborting update.")
-                return
-                
-            with open(__file__, 'r') as f:
-                current_code = f.read()
-                
-            # If the GitHub code is different, update the local file and restart
-            if new_code.strip() != current_code.strip():
-                print("New version found! Running safe compilation test...")
-                temp_file = os.path.join(os.path.dirname(__file__), 'update_temp.py')
-                with open(temp_file, 'w') as f:
-                    f.write(new_code)
-                
-                # Verify syntax before applying (Bricked Laptop Safeguard)
-                try:
-                    compile(new_code, 'update_temp.py', 'exec')
-                except SyntaxError:
-                    print("Downloaded update contains syntax errors. Aborting to protect tracker.")
-                    os.remove(temp_file)
-                    return
-                
-                # Replace current file safely
-                os.replace(temp_file, __file__)
-                
-                kwargs = {}
-                if os.name == 'nt':
-                    kwargs['creationflags'] = 0x08000000
-                subprocess.Popen([sys.executable] + sys.argv, **kwargs)
-                sys.exit(0)
-    except Exception as e:
-        pass # Ignore network errors and run normally
+        if res.status_code != 200:
+            return
+
+        new_code = res.text
+
+        # Validation: ensure the downloaded file is our Python script, not a 404 page or corrupted data
+        if "def main():" not in new_code or "import requests" not in new_code:
+            print("Downloaded update is corrupted or invalid. Aborting update.")
+            return
+
+        # Check if it's actually different from what's running
+        with open(__file__, 'r') as f:
+            current_code = f.read()
+
+        if new_code.strip() == current_code.strip():
+            return  # Already up to date
+
+        print("New tracker version found! Running safe compilation test...")
+        temp_file = os.path.join(os.path.dirname(__file__), 'update_temp.py')
+        with open(temp_file, 'w') as f:
+            f.write(new_code)
+
+        # Verify syntax before applying (bricked laptop safeguard)
+        try:
+            compile(new_code, 'update_temp.py', 'exec')
+        except SyntaxError:
+            print("Downloaded update contains syntax errors. Aborting to protect tracker.")
+            os.remove(temp_file)
+            return
+
+        # Atomically replace current file and restart
+        os.replace(temp_file, __file__)
+        print("Update applied! Restarting tracker...")
+
+        kwargs = {}
+        if os.name == 'nt':
+            kwargs['creationflags'] = 0x08000000
+        subprocess.Popen([sys.executable] + sys.argv, **kwargs)
+        sys.exit(0)
+    except Exception:
+        pass  # Ignore all errors — always fall through to normal sync
 
 # Automatically get the laptop MAC address
 def get_mac_address():
