@@ -518,10 +518,13 @@ def main():
     # Block until internet is fully connected (solves the Wi-Fi race condition on wake)
     wait_for_internet(300)
 
-    check_installer_updates()
-    # Attempt to fetch and apply OTA updates before doing anything
-    auto_update()
-    
+    # The .py-based OTA (download script + replace __file__) only works when
+    # running as a plain script. A frozen exe has no .py to replace, so skip it.
+    if not getattr(sys, 'frozen', False):
+        check_installer_updates()
+        # Attempt to fetch and apply OTA updates before doing anything
+        auto_update()
+
     # Watchdog: Ensure engines are actually running before we try to pull data
     check_and_start_engines()
     
