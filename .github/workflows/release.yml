@@ -35,3 +35,4 @@ jobs:
           files: |
             activity_tracker.py
             install_windows.bat
+            install_ubuntu_mac.sh
