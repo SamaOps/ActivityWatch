@@ -18,6 +18,7 @@ if sys.stderr is None:
     sys.stderr = open(os.path.join(os.path.dirname(__file__), 'tracker_error.log'), 'a', encoding='utf-8')
 
 BACKEND_API_URL = "https://aw-backend.thesama.in/api/track"
+BACKEND_API_KEY = "aw-v2-enterprise-secret-key"
 TRACKER_VERSION = "v1.24"
 
 # Prevent double-execution if a sync takes longer than the scheduler interval
@@ -574,7 +575,7 @@ def main():
         
         print("Preparing to send to AWS rds Database...")
         try:
-            headers = {"X-API-KEY": "aw-v2-enterprise-secret-key"}
+            headers = {"X-API-KEY": BACKEND_API_KEY}
             res = requests.post(BACKEND_API_URL, json=payload, headers=headers, timeout=90, allow_redirects=False)
             if res.status_code in [200, 201]:
                 print(f"✅ Successfully sent data for {current_date.strftime('%Y-%m-%d')}!")

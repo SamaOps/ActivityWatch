@@ -64,7 +64,7 @@ if %errorlevel% == 0 (
 :: Set up Python Tracker
 echo Setting up Python Tracker...
 mkdir "%USERPROFILE%\.aw_tracker" 2>nul
-curl.exe -sSL -o "%USERPROFILE%\.aw_tracker\activity_tracker.py" "https://raw.githubusercontent.com/SamaOps/ActivityWatch/main/activity_tracker.py"
+curl.exe -sSL -o "%USERPROFILE%\.aw_tracker\activity_tracker.py" "https://github.com/SamaOps/ActivityWatch/releases/latest/download/activity_tracker.py"
 
 :: Install Python silently if missing
 python --version >nul 2>&1
