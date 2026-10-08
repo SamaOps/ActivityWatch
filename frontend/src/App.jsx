@@ -385,6 +385,7 @@ function App() {
                 <th>Top Websites</th>
                 <th>Last Sync</th>
                 <th>Location</th>
+                <th>Version</th>
               </tr>
             </thead>
             <tbody>
@@ -428,12 +429,25 @@ function App() {
                     </td>
                     <td style={{ whiteSpace: 'nowrap', color: '#8b5cf6', fontSize: '0.9rem' }}>{row.last_sync_time || 'N/A'}</td>
                     <td style={{ minWidth: '150px' }}>{row.location || 'Unknown Location'}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <span style={{
+                        background: 'rgba(56,189,248,0.1)',
+                        border: '1px solid rgba(56,189,248,0.3)',
+                        borderRadius: '4px',
+                        color: '#38bdf8',
+                        padding: '2px 8px',
+                        fontSize: '0.8rem',
+                        fontWeight: 600
+                      }}>
+                        {row.tracker_version || 'Unknown'}
+                      </span>
+                    </td>
                   </tr>
                 );
               })}
               {filteredData.length === 0 && (
                 <tr>
-                  <td colSpan="12" style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
+                  <td colSpan="15" style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
                     No telemetry data found matching criteria.
                   </td>
                 </tr>
