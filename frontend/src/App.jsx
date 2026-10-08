@@ -107,15 +107,23 @@ function App() {
     fetchData();
   }, []);
 
-  // Time string parser (e.g. "2h 16m" -> 136 (minutes))
+  // Time parser -> minutes. The tracker now sends integer seconds ("8160");
+  // older rows may still be in the legacy "2h 16m" format.
   const parseTimeStr = (str) => {
     if (!str || str === 'None') return 0;
-    let mins = 0;
-    const hMatch = str.match(/(\d+)h/);
-    const mMatch = str.match(/(\d+)m/);
-    if (hMatch) mins += parseInt(hMatch[1]) * 60;
-    if (mMatch) mins += parseInt(mMatch[1]);
-    return mins;
+    // Legacy format "2h 16m"
+    if (str.includes('h') || str.includes('m')) {
+      let mins = 0;
+      const hMatch = str.match(/(\d+)h/);
+      const mMatch = str.match(/(\d+)m/);
+      if (hMatch) mins += parseInt(hMatch[1]) * 60;
+      if (mMatch) mins += parseInt(mMatch[1]);
+      return mins;
+    }
+    // New format: integer seconds -> minutes
+    const seconds = parseInt(str, 10);
+    if (isNaN(seconds)) return 0;
+    return Math.round(seconds / 60);
   };
 
   // Filter Data
