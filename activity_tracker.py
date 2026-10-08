@@ -11,13 +11,8 @@ import time
 import uuid
 import re
 
-# Persistent directory for all state files (device_id, last_sync, lock, logs).
-# When frozen as a one-file exe, __file__ points to a temp dir that is wiped on
-# exit, so we use the exe's actual folder instead to keep state across runs.
-if getattr(sys, 'frozen', False):
-    BASE_DIR = os.path.dirname(sys.executable)
-else:
-    BASE_DIR = os.path.dirname(__file__)
+# Directory for all state files (device_id, last_sync, lock, logs).
+BASE_DIR = os.path.dirname(__file__)
 
 # In Windows pythonw, stdout and stderr are None. We dynamically redirect them to a log file to catch any future background errors.
 if sys.stdout is None:
@@ -25,11 +20,13 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.path.join(BASE_DIR, 'tracker_error.log'), 'a', encoding='utf-8')
 
-BACKEND_API_URL = "http://16.171.17.163:8000/api/track"
-# Write-only key. The CI release build replaces the placeholder below with the
-# real key from a GitHub secret; for local .py runs, set TRACKER_WRITE_KEY.
+# Backend base URL and write key are injected by the SERVER when it serves this
+# file (the real values live only in the server's env). For local .py runs you
+# can set BACKEND_BASE_URL / TRACKER_WRITE_KEY instead.
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL") or "__INJECT_BACKEND_URL__"
 BACKEND_API_KEY = os.getenv("TRACKER_WRITE_KEY") or "__INJECT_TRACKER_WRITE_KEY__"
-TRACKER_VERSION = "v1.26"
+BACKEND_API_URL = BACKEND_BASE_URL + "/api/track"
+TRACKER_VERSION = "v1.27"
 
 # Prevent double-execution if a sync takes longer than the scheduler interval
 LOCK_FILE = os.path.join(BASE_DIR, 'sync.lock')
@@ -60,88 +57,39 @@ def cleanup_lock():
 import atexit
 atexit.register(cleanup_lock)
 
-def get_latest_release_tag():
-    """Get the latest GitHub release tag by following the /releases/latest redirect.
-    Does NOT use the GitHub API so there is no 60/hr rate limit — safe for school NAT networks."""
-    try:
-        res = requests.get(
-            "https://github.com/prakash-dey/activitywatch/releases/latest",
-            allow_redirects=True, timeout=10
-        )
-        # Final URL format: https://github.com/.../releases/tag/v1.25
-        if '/tag/' in res.url:
-            return res.url.split('/tag/')[-1].strip()
-    except Exception:
-        pass
-    return None
-
-def check_installer_updates():
-    try:
-        latest_tag = get_latest_release_tag()
-        if not latest_tag or latest_tag == TRACKER_VERSION:
-            return  # Already on latest version
-
-        print(f"New version available ({latest_tag} vs current {TRACKER_VERSION})! Downloading installer...")
-
-        system = platform.system()
-        if system == "Windows":
-            installer_url = "https://github.com/prakash-dey/activitywatch/releases/latest/download/install_windows.bat"
-            ext = ".bat"
-            cmd = ["cmd.exe", "/c"]
-        else:
-            installer_url = "https://github.com/prakash-dey/activitywatch/releases/latest/download/install_ubuntu_mac.sh"
-            ext = ".sh"
-            cmd = ["bash"]
-
-        inst_res = requests.get(installer_url, timeout=30)
-        if inst_res.status_code == 200:
-            script_path = os.path.join(os.path.dirname(__file__), f"update_installer{ext}")
-            with open(script_path, 'w') as f:
-                f.write(inst_res.text)
-
-            if system != "Windows":
-                os.chmod(script_path, 0o755)
-
-            kwargs = {}
-            if os.name == 'nt':
-                kwargs['creationflags'] = 0x08000000
-            subprocess.Popen(cmd + [script_path], **kwargs)
-
-            # Exit immediately so the new installer can run cleanly without collision
-            sys.exit(0)
-    except Exception:
-        pass
-
 def auto_update():
+    """Self-update from the SERVER (not GitHub). The server serves the latest
+    tracker with the backend URL + write key already injected, so devices never
+    touch GitHub and the secret is never in a public download."""
     try:
-        # Check tag first — avoids downloading the whole file if already up to date
-        latest_tag = get_latest_release_tag()
-        if not latest_tag or latest_tag == TRACKER_VERSION:
-            return  # Already on latest version
+        # Ask the server what the latest version is — cheap, avoids a full download
+        ver_res = requests.get(BACKEND_BASE_URL + "/tracker/version", timeout=10)
+        if ver_res.status_code != 200:
+            return
+        latest = (ver_res.json() or {}).get("version")
+        if not latest or latest == TRACKER_VERSION:
+            return  # Already up to date
 
-        print(f"New tracker version available ({latest_tag})! Downloading...")
-        url = "https://github.com/prakash-dey/activitywatch/releases/latest/download/activity_tracker.py"
-        res = requests.get(url, timeout=10)
+        print(f"New tracker version available ({latest})! Downloading from server...")
+        res = requests.get(BACKEND_BASE_URL + "/tracker/activity_tracker.py", timeout=30)
         if res.status_code != 200:
             return
 
         new_code = res.text
 
-        # Validation: ensure the downloaded file is our Python script, not a 404 page or corrupted data
+        # Validation: ensure the download is our script, not an error page
         if "def main():" not in new_code or "import requests" not in new_code:
             print("Downloaded update is invalid. Aborting.")
             return
 
-        # Guard against infinite update loop: if the new file's TRACKER_VERSION doesn't match
-        # the release tag, the developer forgot to bump it — applying it would re-trigger the
-        # update on every restart.
-        import re
+        # Loop guard: the new file's TRACKER_VERSION must match what the server
+        # reported, otherwise applying it would re-trigger the update every run.
         version_match = re.search(r'TRACKER_VERSION\s*=\s*["\']([^"\']+)["\']', new_code)
-        if not version_match or version_match.group(1) != latest_tag:
-            print(f"Downloaded file has TRACKER_VERSION={version_match.group(1) if version_match else '?'} but release tag is {latest_tag}. Aborting to prevent update loop.")
+        if not version_match or version_match.group(1) != latest:
+            print(f"Downloaded file version {version_match.group(1) if version_match else '?'} != server version {latest}. Aborting to prevent update loop.")
             return
 
-        temp_file = os.path.join(os.path.dirname(__file__), 'update_temp.py')
+        temp_file = os.path.join(BASE_DIR, 'update_temp.py')
         with open(temp_file, 'w') as f:
             f.write(new_code)
 
@@ -155,7 +103,7 @@ def auto_update():
 
         # Atomically replace current file and restart
         os.replace(temp_file, __file__)
-        print(f"Updated to {latest_tag}! Restarting tracker...")
+        print(f"Updated to {latest}! Restarting tracker...")
 
         kwargs = {}
         if os.name == 'nt':
@@ -528,12 +476,8 @@ def main():
     # Block until internet is fully connected (solves the Wi-Fi race condition on wake)
     wait_for_internet(300)
 
-    # The .py-based OTA (download script + replace __file__) only works when
-    # running as a plain script. A frozen exe has no .py to replace, so skip it.
-    if not getattr(sys, 'frozen', False):
-        check_installer_updates()
-        # Attempt to fetch and apply OTA updates before doing anything
-        auto_update()
+    # Fetch and apply any OTA update from the server before doing anything
+    auto_update()
 
     # Watchdog: Ensure engines are actually running before we try to pull data
     check_and_start_engines()

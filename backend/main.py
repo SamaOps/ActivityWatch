@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, Query, HTTPException, Security, status
+from fastapi.responses import PlainTextResponse
 from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -7,6 +8,8 @@ from pydantic import BaseModel
 from typing import List, Optional
 from database import SessionLocal, DailyActivity
 import os
+import threading
+import requests
 
 app = FastAPI(title="ActivityWatch Tracker Backend")
 
@@ -15,6 +18,56 @@ app = FastAPI(title="ActivityWatch Tracker Backend")
 WRITE_KEY = os.getenv("TRACKER_WRITE_KEY", "aw-write-key-change-me")
 READ_KEY = os.getenv("DASHBOARD_READ_KEY", "aw-read-key-change-me")
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
+
+# ---- Tracker distribution: the server is the single hub between GitHub and
+# the devices. It pulls the clean placeholder tracker from the latest GitHub
+# release, injects the real backend URL + write key (kept only in server env),
+# caches it per version, and serves it to devices. Devices never touch GitHub,
+# so there is no 60/hr GitHub rate-limit exposure across the fleet.
+GITHUB_REPO = os.getenv("GITHUB_REPO", "prakash-dey/activitywatch")
+# The public URL devices use to reach THIS server (injected into the tracker).
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://16.171.17.163:8000")
+# Shared token the release workflow sends to trigger a refresh (event-driven,
+# no polling). Must match the REFRESH_TOKEN GitHub secret.
+REFRESH_TOKEN = os.getenv("REFRESH_TOKEN", "aw-refresh-token-change-me")
+
+_tracker_lock = threading.Lock()
+_tracker_cache = {"version": None, "code": None}
+
+def _fetch_latest_tag():
+    # Follow the /releases/latest redirect (no GitHub API rate limit).
+    res = requests.get(
+        f"https://github.com/{GITHUB_REPO}/releases/latest",
+        allow_redirects=True, timeout=10
+    )
+    if "/tag/" in res.url:
+        return res.url.split("/tag/")[-1].strip()
+    return None
+
+def refresh_tracker():
+    """Pull the latest release tracker from GitHub, inject secrets, cache it.
+    Called once at startup and on each /tracker/refresh webhook — never polled."""
+    with _tracker_lock:
+        try:
+            tag = _fetch_latest_tag()
+            if not tag or tag == _tracker_cache["version"]:
+                return
+            code = requests.get(
+                f"https://github.com/{GITHUB_REPO}/releases/latest/download/activity_tracker.py",
+                timeout=30
+            ).text
+            if "def main():" not in code:
+                return  # bad download, keep previous cache
+            code = code.replace("__INJECT_TRACKER_WRITE_KEY__", WRITE_KEY)
+            code = code.replace("__INJECT_BACKEND_URL__", BACKEND_BASE_URL)
+            _tracker_cache["version"] = tag
+            _tracker_cache["code"] = code
+        except Exception:
+            pass  # network hiccup: keep serving the previous cached version
+
+@app.on_event("startup")
+def _start_refresh():
+    refresh_tracker()  # populate cache once at boot; after that it's event-driven
 
 def require_write_key(api_key_header: str = Security(api_key_header)):
     if api_key_header == WRITE_KEY:
@@ -153,6 +206,29 @@ def get_unique_devices(db: Session = Depends(get_db), api_key: str = Depends(req
 @app.get("/")
 def read_root():
     return {"status": "Online", "message": "ActivityWatch Backend is fully operational!"}
+
+# ----------------- TRACKER DISTRIBUTION (devices pull from here) -----------------
+@app.get("/tracker/version")
+def tracker_version():
+    """Latest tracker version the server is serving. Devices compare this to their own.
+    Serves the cache only — no GitHub fetch here (refresh is event-driven)."""
+    return {"version": _tracker_cache["version"]}
+
+@app.get("/tracker/activity_tracker.py", response_class=PlainTextResponse)
+def tracker_file():
+    """The latest tracker with backend URL + write key injected. Devices self-update from this."""
+    if not _tracker_cache["code"]:
+        raise HTTPException(status_code=503, detail="Tracker not ready yet")
+    return _tracker_cache["code"]
+
+@app.post("/tracker/refresh")
+def tracker_refresh(x_refresh_token: str = Security(APIKeyHeader(name="X-Refresh-Token", auto_error=False))):
+    """Webhook the release workflow calls after publishing a release. Pulls the
+    new version from GitHub immediately instead of waiting for a poll."""
+    if x_refresh_token != REFRESH_TOKEN:
+        raise HTTPException(status_code=403, detail="Invalid refresh token")
+    refresh_tracker()
+    return {"status": "refreshed", "version": _tracker_cache["version"]}
 
 @app.post("/api/delete_test")
 def delete_test_data(db: Session = Depends(get_db), api_key: str = Depends(require_read_key)):
