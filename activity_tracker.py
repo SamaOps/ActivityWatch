@@ -458,9 +458,18 @@ def check_and_start_engines():
     print("ActivityWatch engines are dead (likely due to reboot). Restarting them...")
     try:
         if platform.system() == "Windows":
-            script = os.path.join(os.environ["USERPROFILE"], ".aw_tracker", "start_aw.vbs")
-            if os.path.exists(script):
-                subprocess.Popen(["wscript.exe", script], creationflags=0x08000000)
+            vbs_script = os.path.join(os.environ["USERPROFILE"], ".aw_tracker", "start_aw.vbs")
+            ps1_script = os.path.join(os.environ["USERPROFILE"], ".aw_tracker", "start_aw.ps1")
+            import shutil
+            if shutil.which("wscript.exe") and os.path.exists(vbs_script):
+                # Primary: VBScript (zero flash, Win 98 to Win 11 current)
+                subprocess.Popen(["wscript.exe", vbs_script], creationflags=0x08000000)
+            elif os.path.exists(ps1_script):
+                # Fallback: PowerShell (if VBScript removed in future Win 11 build)
+                subprocess.Popen(
+                    ["powershell", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", ps1_script],
+                    creationflags=0x08000000
+                )
         else:
             script = os.path.expanduser("~/.aw_tracker/start_aw.sh")
             if os.path.exists(script):
