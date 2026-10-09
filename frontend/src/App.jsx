@@ -8,7 +8,8 @@ import {
 import { format, parse, isAfter, isBefore, isEqual } from 'date-fns';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://activitywatch-j5d5.onrender.com/api/data';
-const API_KEY = import.meta.env.VITE_ACTIVE_WATCH_API_KEY || '';
+// We no longer hardcode the API key to prevent exposing it in the browser!
+// It will be requested via a password prompt and stored in sessionStorage.
 
 const COLORS = ['#38bdf8', '#fb923c', '#10b981', '#8b5cf6', '#ef4444'];
 
@@ -80,15 +81,25 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
+  const [authKey, setAuthKey] = useState(sessionStorage.getItem('dashboard_auth_key') || '');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authError, setAuthError] = useState(false);
+  const [authInput, setAuthInput] = useState('');
+
   // Date filters
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
+    if (!authKey) return;
+    
     const fetchData = async () => {
       try {
-        const response = await axios.get(API_URL, { headers: { 'X-API-KEY': API_KEY } });
+        const response = await axios.get(API_URL, { headers: { 'X-API-KEY': authKey } });
         setData(response.data);
+        setIsAuthenticated(true);
+        sessionStorage.setItem('dashboard_auth_key', authKey);
+        setAuthError(false);
         
         // Auto-set date range based on data
         if (response.data.length > 0) {
@@ -101,11 +112,16 @@ function App() {
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          setAuthError(true);
+          setIsAuthenticated(false);
+          sessionStorage.removeItem('dashboard_auth_key');
+        }
         setLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [authKey]);
 
   // Time parser -> minutes. The tracker now sends integer seconds ("8160");
   // older rows may still be in the legacy "2h 16m" format.
@@ -218,6 +234,30 @@ function App() {
 
     return { chartData: cData, osData: oData, dayData: dData, stats };
   }, [filteredData]);
+
+  if (!isAuthenticated && !authKey) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', fontFamily: 'Inter, system-ui, sans-serif' }}>
+        <div style={{ backgroundColor: '#1e293b', padding: '40px', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', width: '100%', maxWidth: '400px', textAlign: 'center' }}>
+          <Activity size={48} color="#38bdf8" style={{ marginBottom: '20px' }} />
+          <h2 style={{ color: 'white', marginBottom: '24px', fontSize: '1.5rem' }}>Dashboard Login</h2>
+          <form onSubmit={(e) => { e.preventDefault(); setAuthKey(authInput); }}>
+            <input 
+              type="password" 
+              placeholder="Enter Access Key"
+              value={authInput}
+              onChange={(e) => setAuthInput(e.target.value)}
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: 'white', marginBottom: '16px', boxSizing: 'border-box' }}
+            />
+            {authError && <p style={{ color: '#ef4444', marginBottom: '16px', fontSize: '0.875rem' }}>Invalid Access Key</p>}
+            <button type="submit" style={{ width: '100%', padding: '12px', backgroundColor: '#38bdf8', color: '#0f172a', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+              Access Dashboard
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

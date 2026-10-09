@@ -85,10 +85,14 @@ def require_read_key(api_key_header: str = Security(api_key_header)):
         detail="Could not validate API key",
     )
 
-# Allow dashboards from any domain to fetch data
+# Allow dashboards only from the specific Vercel URL and local development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://activity-watch-opal.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
