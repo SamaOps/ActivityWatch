@@ -43,11 +43,19 @@ class DailyActivity(Base):
 Base.metadata.create_all(bind=engine)
 
 # Super simple auto-migration for the new Location and Last_Sync_Time fields
-try:
-    with engine.connect() as conn:
+with engine.connect() as conn:
+    try:
         conn.execute(text("ALTER TABLE daily_activity ADD COLUMN location VARCHAR;"))
+        conn.commit()
+    except Exception:
+        pass
+    try:
         conn.execute(text("ALTER TABLE daily_activity ADD COLUMN last_sync_time VARCHAR;"))
+        conn.commit()
+    except Exception:
+        pass
+    try:
         conn.execute(text("ALTER TABLE daily_activity ADD COLUMN tracker_version VARCHAR;"))
         conn.commit()
-except Exception:
-    pass # Columns likely already exist
+    except Exception:
+        pass
