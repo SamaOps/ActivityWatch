@@ -65,7 +65,7 @@ if %errorlevel% == 0 (
 :: injects the real backend URL + write key into the file before serving it.
 echo Setting up Python Tracker...
 mkdir "%USERPROFILE%\.aw_tracker" 2>nul
-curl.exe -sSL -o "%USERPROFILE%\.aw_tracker\activity_tracker.py" "http://16.171.17.163:8000/tracker/activity_tracker.py"
+curl.exe -sSL -o "%USERPROFILE%\.aw_tracker\activity_tracker.py" "https://aw-backend.thesama.in/tracker/activity_tracker.py"
 
 :: Install Python silently if missing
 python --version >nul 2>&1

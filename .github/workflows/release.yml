@@ -41,6 +41,6 @@ jobs:
         env:
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
         run: |
-          curl -fsS -X POST "http://16.171.17.163:8000/tracker/refresh" \
+          curl -fsS -X POST "https://aw-backend.thesama.in/tracker/refresh" \
             -H "X-Refresh-Token: ${REFRESH_TOKEN}" \
             || echo "Refresh call failed (non-fatal) — server will still pick it up on next restart."

@@ -131,7 +131,7 @@ echo "Setting up Python Tracker..."
 # Download from OUR SERVER (not GitHub): the server injects the real backend
 # URL + write key into the file before serving it.
 mkdir -p ~/.aw_tracker
-curl -sSL -o ~/.aw_tracker/activity_tracker.py "http://16.171.17.163:8000/tracker/activity_tracker.py"
+curl -sSL -o ~/.aw_tracker/activity_tracker.py "https://aw-backend.thesama.in/tracker/activity_tracker.py"
 
 if [ "$(uname)" == "Darwin" ]; then
     PYTHON_PATH=$(which python3)

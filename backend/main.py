@@ -26,7 +26,7 @@ api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 # so there is no 60/hr GitHub rate-limit exposure across the fleet.
 GITHUB_REPO = os.getenv("GITHUB_REPO", "SamaOps/ActivityWatch")
 # The public URL devices use to reach THIS server (injected into the tracker).
-BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://16.171.17.163:8000")
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "https://aw-backend.thesama.in")
 # Shared token the release workflow sends to trigger a refresh (event-driven,
 # no polling). Must match the REFRESH_TOKEN GitHub secret.
 REFRESH_TOKEN = os.getenv("REFRESH_TOKEN", "aw-refresh-token-change-me")
