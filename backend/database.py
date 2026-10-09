@@ -5,9 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Production AWS PostgreSQL Database
-PROD_DB = "postgresql+psycopg://activity_watch:ActivityWatch*898&8@db-pg.cosodeda78lq.ap-south-1.rds.amazonaws.com:5432/activity_watch"
-DATABASE_URL = os.getenv("POSTGRES_URL", PROD_DB)
+# Connection string comes only from the environment (see backend/.env.example).
+DATABASE_URL = os.getenv("POSTGRES_URL")
+if not DATABASE_URL:
+    raise RuntimeError("POSTGRES_URL is not set. Copy backend/.env.example to backend/.env and fill it in.")
 
 engine = create_engine(
     DATABASE_URL, 
