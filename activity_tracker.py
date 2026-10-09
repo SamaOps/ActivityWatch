@@ -26,7 +26,7 @@ if sys.stderr is None:
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL") or "__INJECT_BACKEND_URL__"
 BACKEND_API_KEY = os.getenv("TRACKER_WRITE_KEY") or "__INJECT_TRACKER_WRITE_KEY__"
 BACKEND_API_URL = BACKEND_BASE_URL + "/api/track"
-TRACKER_VERSION = "v1.25"
+TRACKER_VERSION = "v1.26"
 
 # Prevent double-execution if a sync takes longer than the scheduler interval
 LOCK_FILE = os.path.join(BASE_DIR, 'sync.lock')
