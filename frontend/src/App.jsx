@@ -81,7 +81,9 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  const [authKey, setAuthKey] = useState(sessionStorage.getItem('dashboard_auth_key') || '');
+  const [authKey, setAuthKey] = useState(
+    localStorage.getItem('dashboard_auth_key') || import.meta.env.VITE_ACTIVE_WATCH_API_KEY || ''
+  );
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState(false);
   const [authInput, setAuthInput] = useState('');
@@ -91,22 +93,37 @@ function App() {
   const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
-    if (!authKey) return;
+    if (!authKey) {
+      setLoading(false);
+      return;
+    }
     
     const fetchData = async () => {
       try {
+        setLoading(true);
         const response = await axios.get(API_URL, { headers: { 'X-API-KEY': authKey } });
         setData(response.data);
         setIsAuthenticated(true);
-        sessionStorage.setItem('dashboard_auth_key', authKey);
+        localStorage.setItem('dashboard_auth_key', authKey);
         setAuthError(false);
         
-        // Auto-set date range based on data
-        if (response.data.length > 0) {
-          const dates = response.data.map(d => parse(d.date, 'MM/dd/yyyy', new Date()));
-          dates.sort((a, b) => a - b);
-          setStartDate(format(dates[0], 'yyyy-MM-dd'));
-          setEndDate(format(dates[dates.length - 1], 'yyyy-MM-dd'));
+        // Auto-set date range based on all valid dates in data
+        if (response.data && response.data.length > 0) {
+          const validDates = response.data
+            .map(d => {
+              try {
+                return parse(d.date, 'MM/dd/yyyy', new Date());
+              } catch {
+                return null;
+              }
+            })
+            .filter(d => d && !isNaN(d.getTime()));
+
+          if (validDates.length > 0) {
+            validDates.sort((a, b) => a - b);
+            setStartDate(format(validDates[0], 'yyyy-MM-dd'));
+            setEndDate(format(validDates[validDates.length - 1], 'yyyy-MM-dd'));
+          }
         }
         
         setLoading(false);
@@ -115,7 +132,8 @@ function App() {
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
           setAuthError(true);
           setIsAuthenticated(false);
-          sessionStorage.removeItem('dashboard_auth_key');
+          setAuthKey('');
+          localStorage.removeItem('dashboard_auth_key');
         }
         setLoading(false);
       }
@@ -235,13 +253,22 @@ function App() {
     return { chartData: cData, osData: oData, dayData: dData, stats };
   }, [filteredData]);
 
-  if (!isAuthenticated && !authKey) {
+  if (loading) {
+    return (
+      <div className="loading-state">
+        <div className="spinner"></div>
+        <h2 style={{ fontWeight: '500', color: '#94a3b8', marginTop: '1.5rem', letterSpacing: '0.05em' }}>Loading Telemetry Data...</h2>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', fontFamily: 'Inter, system-ui, sans-serif' }}>
         <div style={{ backgroundColor: '#1e293b', padding: '40px', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', width: '100%', maxWidth: '400px', textAlign: 'center' }}>
           <Activity size={48} color="#38bdf8" style={{ marginBottom: '20px' }} />
           <h2 style={{ color: 'white', marginBottom: '24px', fontSize: '1.5rem' }}>Dashboard Login</h2>
-          <form onSubmit={(e) => { e.preventDefault(); setAuthKey(authInput); }}>
+          <form onSubmit={(e) => { e.preventDefault(); if (authInput.trim()) setAuthKey(authInput.trim()); }}>
             <input 
               type="password" 
               placeholder="Enter Access Key"
@@ -255,15 +282,6 @@ function App() {
             </button>
           </form>
         </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="loading-state">
-        <div className="spinner"></div>
-        <h2 style={{ fontWeight: '500', color: '#94a3b8', marginTop: '1.5rem', letterSpacing: '0.05em' }}>Loading Telemetry Data...</h2>
       </div>
     );
   }
@@ -285,6 +303,26 @@ function App() {
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="date-input" />
           </div>
           <button className="btn-export"><Download size={16}/> Export CSV</button>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('dashboard_auth_key');
+              setIsAuthenticated(false);
+              setAuthKey('');
+            }}
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#ef4444',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              marginLeft: '8px'
+            }}
+          >
+            Logout
+          </button>
         </div>
       </header>
 
