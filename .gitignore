@@ -10,16 +10,47 @@ htmlcov
 
 # Editor/IDEs
 .idea
+.vscode
 *.swp
+*.swo
 
 # Python
 *venv*
 __pycache__
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache
 .python-version
 
-# Misc
+# Rust (installer/)
+target/
+*.pdb
+
+# OS
 .*cache
 .DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# Secrets / local env overrides (keep .env.example tracked)
 .env
+.env.local
+.env.*.local
 backend/.env
+
+# Local DB files (never checked in; .env.example documents remote DB URL)
+backend/*.db
+
+# Tracker runtime files
+# BASE_DIR in activity_tracker.py is wherever the script runs from, so if a
+# developer runs it from the repo root during testing, these drop here.
 last_sync.txt
+sync.lock
+device_id.txt
+location_cache.txt
+tracker.log
+tracker_error.log
+install.log
+install_status.json

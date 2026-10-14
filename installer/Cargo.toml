@@ -1,0 +1,20 @@
+[package]
+name = "aw-installer"
+version = "1.0.0"
+edition = "2021"
+description = "ActivityWatch tracker installer for Windows (replaces install_windows.bat)"
+
+[[bin]]
+name = "aw-installer"
+path = "src/main.rs"
+
+# No external dependencies: we shell out to curl.exe, tar.exe, reg, schtasks,
+# and powershell (all present on Windows 10 1803+ / Windows 11), so the binary
+# stays small and easy to audit.
+
+[profile.release]
+opt-level = "z"   # optimize for size
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
